@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+backend/.env
+frontend/.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Build artifacts
+dist/
+build/
+
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
+frontend/blob-report/

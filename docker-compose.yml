@@ -1,0 +1,184 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-systemforge}
+      POSTGRES_USER: ${POSTGRES_USER:-systemforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-systemforge}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-systemforge} -d ${POSTGRES_DB:-systemforge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${BACKEND_OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
+      CORS_ORIGINS: http://localhost:3000
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
+      AUTO_CREATE_TABLES: "false"
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  backend-outbox-worker:
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "app.workers.run_outbox_relay"]
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
+      CORS_ORIGINS: http://localhost:3000
+      AUTO_CREATE_TABLES: "false"
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "outbox"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  backend-delivery-worker:
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "app.workers.run_delivery_worker"]
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
+      CORS_ORIGINS: http://localhost:3000
+      AUTO_CREATE_TABLES: "false"
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "delivery"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  backend-notification-worker:
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "app.workers.run_notification_worker"]
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
+      CORS_ORIGINS: http://localhost:3000
+      AUTO_CREATE_TABLES: "false"
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "notification"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  backend-test:
+    build:
+      context: ./backend
+      target: test
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  backend-migrate:
+    build:
+      context: ./backend
+      target: runtime
+    command: ["sh", "-lc", "/app/scripts/migrate.sh"]
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      CORS_ORIGINS: http://localhost:3000
+      AUTO_CREATE_TABLES: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${FRONTEND_NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+      NEXT_PUBLIC_APP_NAME: SystemForge AI
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

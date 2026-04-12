@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 5%;
+  --foreground: 240 5% 96%;
+  --card: 240 8% 8%;
+  --border: 240 6% 18%;
+  --muted-foreground: 240 6% 66%;
+  --brand: 217 91% 60%;
+  --ring: 221 83% 53%;
+  --radius: 0.75rem;
+  color-scheme: dark;
+}
+
+.light {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 4%;
+  --card: 0 0% 100%;
+  --border: 240 6% 90%;
+  --muted-foreground: 240 4% 45%;
+  --brand: 217 91% 50%;
+  --ring: 217 91% 60%;
+  color-scheme: light;
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply bg-background text-foreground antialiased min-h-screen;
+}
+
+.container-page {
+  @apply mx-auto max-w-7xl px-6;
+}
