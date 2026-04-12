@@ -131,6 +131,12 @@ export const typingPayloadSchema = z.object({
   ttl_ms: z.number().int().min(1000).max(30000).default(8000),
 });
 
+export const typingUpdatedSchema = z.object({
+  conversation_id: z.number().int().positive(),
+  user_id: z.number().int().positive(),
+  is_typing: z.boolean(),
+});
+
 export const wsErrorSchema = z.object({
   code: z.string().min(1).max(64),
   message: z.string().min(1).max(512),
@@ -174,8 +180,9 @@ export function parseEventPayload(type: string, payload: unknown): unknown {
       return syncResponseSchema.parse(payload);
     case "typing.started":
     case "typing.stopped":
-    case "typing.updated":
       return typingPayloadSchema.parse(payload);
+    case "typing.updated":
+      return typingUpdatedSchema.parse(payload);
     case "error":
       return wsErrorSchema.parse(payload);
     default:

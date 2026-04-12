@@ -120,8 +120,13 @@ class DeliveryWorker:
         payload: MessageCreatedEventPayload,
         recipient_user_id: int,
     ) -> None:
-        # TODO(systemforge-realtime): publish a first-class delivery.updated event via outbox
-        # after ack-confirmed state transitions are fully integrated with fanout worker flow.
+        try:
+            from app.messaging.service import acknowledge_delivered
+            with SessionLocal() as db:
+                acknowledge_delivered(db, message_id=payload.message_id, recipient_user_id=recipient_user_id)
+        except Exception:
+            pass
+
         logger.debug(
             "delivery_dispatched_candidate",
             extra={

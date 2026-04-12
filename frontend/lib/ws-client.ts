@@ -8,6 +8,8 @@ import {
   sessionResumedPayloadSchema,
   sessionWelcomePayloadSchema,
   syncResponseSchema,
+  typingPayloadSchema,
+  typingUpdatedSchema,
   wsErrorSchema,
   WsEnvelope,
 } from "@/lib/ws-contract";
@@ -25,6 +27,7 @@ type Handlers = {
   onDeliveryUpdated?: (payload: ReturnType<typeof deliveryUpdatedSchema.parse>) => void;
   onReadUpdated?: (payload: ReturnType<typeof readUpdatedSchema.parse>) => void;
   onSyncResponse?: (payload: ReturnType<typeof syncResponseSchema.parse>) => void;
+  onTypingUpdated?: (payload: ReturnType<typeof typingUpdatedSchema.parse>) => void;
   onErrorEvent?: (payload: ReturnType<typeof wsErrorSchema.parse>) => void;
   onUnknownEvent?: (envelope: WsEnvelope) => void;
 };
@@ -129,6 +132,14 @@ export class WsClient {
     });
   }
 
+  sendTypingStarted(conversationId: number) {
+    this.send("typing.started", { conversation_id: conversationId, ttl_ms: 5000 });
+  }
+
+  sendTypingStopped(conversationId: number) {
+    this.send("typing.stopped", { conversation_id: conversationId, ttl_ms: 1000 });
+  }
+
   sendMessage(input: { clientMsgId: string; conversationId: number; content: string; contentType?: "text" | "markdown" | "json" }) {
     this.send("message.send", {
       client_msg_id: input.clientMsgId,
@@ -198,6 +209,11 @@ export class WsClient {
     if (envelope.type === "sync.response") {
       const payload = syncResponseSchema.parse(envelope.payload);
       this.handlers.onSyncResponse?.(payload);
+      return;
+    }
+    if (envelope.type === "typing.updated") {
+      const payload = typingUpdatedSchema.parse(envelope.payload);
+      this.handlers.onTypingUpdated?.(payload);
       return;
     }
     if (envelope.type === "error") {

@@ -39,8 +39,8 @@ async def create_design(
     user: User = Depends(get_current_user),
 ):
     client_ip = http_request.client.host if http_request.client else "unknown"
-    await enforce_rate_limit(scope="design-create-user", identifier=str(user.id), limit=20, window_seconds=60)
-    await enforce_rate_limit(scope="design-create-ip", identifier=client_ip, limit=40, window_seconds=60)
+    await enforce_rate_limit(scope="design-create-user", identifier=str(user.id), limit=3, window_seconds=60)
+    await enforce_rate_limit(scope="design-create-ip", identifier=client_ip, limit=5, window_seconds=60)
     return await create_design_for_user(db=db, user=user, request=request)
 
 
@@ -81,8 +81,8 @@ async def regenerate_design(
     body: RegenerateDesignRequest | None = Body(default=None),
 ):
     client_ip = http_request.client.host if http_request.client else "unknown"
-    await enforce_rate_limit(scope="design-regenerate-user", identifier=str(user.id), limit=10, window_seconds=60)
-    await enforce_rate_limit(scope="design-regenerate-ip", identifier=client_ip, limit=20, window_seconds=60)
+    await enforce_rate_limit(scope="design-regenerate-user", identifier=str(user.id), limit=4, window_seconds=60)
+    await enforce_rate_limit(scope="design-regenerate-ip", identifier=client_ip, limit=8, window_seconds=60)
     return await regenerate_design_for_user(db=db, user=user, design_id=design_id, body=body)
 
 

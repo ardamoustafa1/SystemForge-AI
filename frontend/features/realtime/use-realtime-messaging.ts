@@ -21,7 +21,9 @@ export function useRealtimeMessaging(conversationId: number) {
   const [lastError, setLastError] = useState<string | null>(null);
   const [socketId, setSocketId] = useState<string | null>(null);
   const [lastServerSeq, setLastServerSeq] = useState(0);
+  const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set());
   const clientRef = useRef<WsClient | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastServerSeqRef = useRef(0);
   const seqMap = useMemo(() => ({ [String(conversationId)]: lastServerSeqRef.current }), [conversationId]);
 
@@ -95,6 +97,17 @@ export function useRealtimeMessaging(conversationId: number) {
         setMessages((prev) =>
           prev.map((msg) => (msg.conversationId === payload.conversation_id && msg.serverSeq <= payload.read_upto_server_seq ? { ...msg, status: "read" } : msg)),
         );
+      },
+      onTypingUpdated: (payload) => {
+        setTypingUsers((prev) => {
+          const next = new Set(prev);
+          if (payload.is_typing) {
+            next.add(payload.user_id);
+          } else {
+            next.delete(payload.user_id);
+          }
+          return next;
+        });
       },
       onSyncResponse: (payload) => {
         const hydrated: RealtimeMessage[] = payload.events
@@ -171,12 +184,29 @@ export function useRealtimeMessaging(conversationId: number) {
     [conversationId, lastServerSeq, connectionState],
   );
 
+  const sendTyping = useCallback(() => {
+    const client = clientRef.current;
+    if (!client || connectionState !== "connected") return;
+    client.sendTypingStarted(conversationId);
+    if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = setTimeout(() => {
+        const currentClient = clientRef.current;
+        if (currentClient) {
+            currentClient.sendTypingStopped(conversationId);
+        }
+    }, 4000);
+  }, [conversationId, connectionState]);
+
   return {
     connectionState,
     canSend: connectionState === "connected",
     messages,
     lastError,
     socketId,
+    typingUsers: Array.from(typingUsers),
+    sendTyping,
     sendMessage,
   };
 }

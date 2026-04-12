@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     max_generation_payload_bytes: int = 65536
 
     rate_limit_per_minute: int = 30
+    sentry_dsn: str = ""
     auto_create_tables: bool = False
     outbox_relay_batch_size: int = 200
     outbox_relay_poll_ms: int = 500
@@ -56,6 +57,10 @@ class Settings(BaseSettings):
     notification_consumer_name: str = "notification-worker-1"
     notification_poll_block_ms: int = 2000
     notification_batch_size: int = 100
+    generation_consumer_group: str = "generation-workers"
+    generation_consumer_name: str = "generation-worker-1"
+    generation_poll_block_ms: int = 2000
+    generation_batch_size: int = 10
     notification_max_attempts: int = 5
     notification_retry_base_seconds: int = 2
     notification_allow_mock_tokens: bool = False

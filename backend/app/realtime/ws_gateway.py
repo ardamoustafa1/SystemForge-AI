@@ -630,7 +630,32 @@ async def websocket_gateway(websocket: WebSocket) -> None:
                         correlation_event_id=envelope.event_id,
                     )
                     continue
-                # TODO(systemforge-realtime): Publish typing.updated to conversation members via realtime stream.
+                try:
+                    with SessionLocal() as db:
+                        member_ids = msg_repo.list_active_member_ids(db, conversation_id=typing_payload.conversation_id)
+                    stream_prefix = f"{get_settings().outbox_stream_prefix}:realtime"
+                    for member_id in member_ids:
+                        if member_id == user.id:
+                            continue
+                        try:
+                            await presence_service.redis.xadd(
+                                f"{stream_prefix}:{member_id}",
+                                {
+                                    "type": "typing.updated",
+                                    "payload_json": json.dumps({
+                                        "conversation_id": typing_payload.conversation_id,
+                                        "user_id": user.id,
+                                        "is_typing": event_type == "typing.started"
+                                    })
+                                },
+                                maxlen=get_settings().stream_maxlen_approx,
+                                approximate=True
+                            )
+                        except Exception:
+                            pass
+                except Exception:
+                    logger.exception("typing_state_fanout_failed")
+
                 await websocket.send_json(
                     _build_event(
                         event_type="ack",

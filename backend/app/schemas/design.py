@@ -93,7 +93,7 @@ class DesignDetailResponse(BaseModel):
     notes: str
     discussion_conversation_id: int | None = None
     input: DesignInputPayload
-    output: DesignOutputPayload
+    output: DesignOutputPayload | None = None
     share_enabled: bool = False
     share_url: str | None = None
 
@@ -113,7 +113,7 @@ class PublicDesignResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     input: DesignInputPayload
-    output: DesignOutputPayload
+    output: DesignOutputPayload | None = None
 
 
 class RegenerateDesignRequest(BaseModel):

@@ -135,6 +135,28 @@ services:
       timeout: 5s
       retries: 3
 
+  backend-generation-worker:
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "app.workers.run_generation_worker"]
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
+      CORS_ORIGINS: http://localhost:3000
+      AUTO_CREATE_TABLES: "false"
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   backend-test:
     build:
       context: ./backend

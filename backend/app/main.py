@@ -1,5 +1,6 @@
 from uuid import uuid4
 import logging
+import sentry_sdk
 
 from fastapi import FastAPI
 from fastapi import HTTPException, Request
@@ -16,6 +17,14 @@ from app.core.errors import (
 from app.core.lifespan import app_lifespan
 
 settings = get_settings()
+
+if settings.sentry_dsn:
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.app_env,
+        traces_sample_rate=1.0,
+    )
+
 app = FastAPI(title=settings.app_name, lifespan=app_lifespan)
 logger = logging.getLogger("systemforge.api")
 

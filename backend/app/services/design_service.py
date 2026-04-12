@@ -24,6 +24,23 @@ from app.services.export_service import build_markdown_export
 from app.services.generation_service import generate_structured_design
 
 
+async def _enqueue_generation(design_id: int, scale_stance: str) -> None:
+    from app.core.redis import get_redis_client
+    import json
+    redis = get_redis_client()
+    settings = get_settings()
+    stream = f"{settings.outbox_stream_prefix}:generation"
+    await redis.xadd(
+        stream,
+        {
+            "type": "design.generate",
+            "payload_json": json.dumps({"design_id": design_id, "scale_stance": scale_stance})
+        },
+        maxlen=settings.stream_maxlen_approx,
+        approximate=True,
+    )
+
+
 def _ensure_design_discussion_conversation(db: Session, design: Design) -> None:
     """Create a 1:1 realtime conversation for this design and add the owner as member."""
     if design.discussion_conversation_id is not None:
@@ -59,7 +76,11 @@ def _share_url_for_design(design: Design) -> str | None:
     return f"{base}/share/{design.share_token}"
 
 
-def _build_detail_response(design: Design, design_input: DesignInput, design_output: DesignOutput) -> DesignDetailResponse:
+def _build_detail_response(design: Design, design_input: DesignInput, design_output: DesignOutput | None) -> DesignDetailResponse:
+    output_payload = None
+    if design_output and design_output.payload:
+        output_payload = DesignOutputPayload.model_validate(design_output.payload)
+
     return DesignDetailResponse(
         id=design.id,
         title=design.title,
@@ -70,51 +91,33 @@ def _build_detail_response(design: Design, design_input: DesignInput, design_out
         notes=design.notes,
         discussion_conversation_id=design.discussion_conversation_id,
         input=DesignInputPayload.model_validate(design_input.payload),
-        output=DesignOutputPayload.model_validate(design_output.payload),
+        output=output_payload,
         share_enabled=design.share_token is not None,
         share_url=_share_url_for_design(design),
     )
 
 
 async def create_design_for_user(db: Session, user: User, request: CreateDesignRequest) -> DesignDetailResponse:
-    output_payload, generation_ms, model_name = await generate_structured_design(
-        request.input,
-        scale_stance=request.scale_stance,
-    )
     design = Design(
         owner_id=user.id,
         title=request.input.project_title.strip(),
         project_type=request.input.project_type.strip(),
-        status="completed",
+        status="generating",
     )
     db.add(design)
     db.flush()
 
     new_input = DesignInput(design_id=design.id, payload=request.input.model_dump())
-    markdown_export = build_markdown_export(request.input.project_title, request.input, output_payload)
-    new_output = DesignOutput(
-        design_id=design.id,
-        payload=output_payload.model_dump(),
-        markdown_export=markdown_export,
-        model_name=model_name,
-        generation_ms=generation_ms,
-    )
-    db.add_all([new_input, new_output])
+    db.add(new_input)
     db.flush()
-    db.add(
-        DesignOutputVersion(
-            design_id=design.id,
-            payload=dict(new_output.payload),
-            markdown_export=new_output.markdown_export,
-            model_name=new_output.model_name,
-            generation_ms=new_output.generation_ms,
-            scale_stance=request.scale_stance,
-        )
-    )
+    
     _ensure_design_discussion_conversation(db, design)
     db.commit()
     db.refresh(design)
-    return _build_detail_response(design, new_input, new_output)
+
+    await _enqueue_generation(design.id, request.scale_stance)
+
+    return _build_detail_response(design, new_input, None)
 
 
 def list_designs_for_user(
@@ -164,7 +167,7 @@ def delete_design_for_user(db: Session, user: User, design_id: int) -> None:
     db.commit()
 
 
-def get_design_artifact_for_user(db: Session, user: User, design_id: int) -> tuple[Design, DesignInput, DesignOutput]:
+def get_design_artifact_for_user(db: Session, user: User, design_id: int) -> tuple[Design, DesignInput, DesignOutput | None]:
     design = _get_owned_design(db, design_id, user.id)
     if design.discussion_conversation_id is None:
         _ensure_design_discussion_conversation(db, design)
@@ -172,7 +175,7 @@ def get_design_artifact_for_user(db: Session, user: User, design_id: int) -> tup
         db.refresh(design)
     design_input = db.scalar(select(DesignInput).where(DesignInput.design_id == design.id))
     design_output = db.scalar(select(DesignOutput).where(DesignOutput.design_id == design.id))
-    if not design_input or not design_output:
+    if not design_input:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Design artifact is incomplete",
@@ -200,51 +203,18 @@ async def regenerate_design_for_user(
     body: RegenerateDesignRequest | None = None,
 ) -> RegenerateDesignResponse:
     scale_stance = body.scale_stance if body else "balanced"
-    design, design_input, _ = get_design_artifact_for_user(db=db, user=user, design_id=design_id)
-    input_payload = DesignInputPayload.model_validate(design_input.payload)
-    existing_output = db.scalar(select(DesignOutput).where(DesignOutput.design_id == design.id))
-    if existing_output and _should_append_regeneration_snapshot(db, design.id, existing_output):
-        db.add(
-            DesignOutputVersion(
-                design_id=design.id,
-                payload=dict(existing_output.payload),
-                markdown_export=existing_output.markdown_export,
-                model_name=existing_output.model_name,
-                generation_ms=existing_output.generation_ms,
-                scale_stance=scale_stance,
-            )
-        )
-    output_payload, generation_ms, model_name = await generate_structured_design(
-        input_payload,
-        scale_stance=scale_stance,
-    )
-    markdown_export = build_markdown_export(design.title, input_payload, output_payload)
-    if not existing_output:
-        existing_output = DesignOutput(
-            design_id=design.id,
-            payload=output_payload.model_dump(),
-            markdown_export=markdown_export,
-            model_name=model_name,
-            generation_ms=generation_ms,
-        )
-        db.add(existing_output)
-    else:
-        existing_output.payload = output_payload.model_dump()
-        existing_output.markdown_export = markdown_export
-        existing_output.model_name = model_name
-        existing_output.generation_ms = generation_ms
-    design.status = "completed"
-    # Force a visible update timestamp even if fallback output is structurally similar.
+    design, _, _ = get_design_artifact_for_user(db=db, user=user, design_id=design_id)
+    
+    design.status = "generating"
     design.updated_at = datetime.now(timezone.utc)
     db.commit()
-    if model_name.startswith("fallback"):
-        msg = "Regenerated with fallback mode (no OpenAI key configured). Output may be similar."
-    else:
-        msg = "Design was regenerated successfully"
+
+    await _enqueue_generation(design.id, scale_stance)
+
     return RegenerateDesignResponse(
         design_id=design.id,
-        status="completed",
-        message=msg,
+        status="generating",
+        message="Design regeneration queued asynchronously.",
     )
 
 

@@ -53,13 +53,31 @@ export default function DesignDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!id) return;
+    if (data?.status === "generating") {
+      const timer = setInterval(async () => {
+        try {
+          const res = await api<DesignRecord>(`/designs/${id}`);
+          if (res.status !== "generating") {
+            setData(res);
+            setNotes(res.notes ?? "");
+            clearInterval(timer);
+          }
+        } catch {
+          // ignore
+        }
+      }, 2000);
+      return () => clearInterval(timer);
+    }
+  }, [data?.status, id]);
+
+  useEffect(() => {
+    if (!id || data?.status === "generating") return;
     api<
       { id: number; created_at: string; model_name: string; scale_stance: string; generation_ms: number }[]
     >(`/designs/${id}/versions`)
       .then(setVersions)
       .catch(() => setVersions([]));
-  }, [id, data?.updated_at]);
+  }, [id, data?.updated_at, data?.status]);
 
   useEffect(() => {
     if (!data) return;
@@ -277,31 +295,39 @@ export default function DesignDetailPage() {
         {actionMessage ? <p className="mt-3 text-sm text-emerald-300">{actionMessage}</p> : null}
       </Card>
 
-      <DesignArtifactGrid
-        data={data}
-        t={t}
-        versions={versions}
-        designId={id}
-        compareA={compareA}
-        compareB={compareB}
-        setCompareA={setCompareA}
-        setCompareB={setCompareB}
-        diffText={diffText}
-        onCompare={async () => {
-          if (compareA === "" || compareB === "") return;
-          try {
-            const r = await api<{ diff_markdown: string }>(
-              `/designs/${id}/versions/compare?a=${compareA}&b=${compareB}`,
-            );
-            setDiffText(r.diff_markdown);
-          } catch {
-            setDiffText(null);
-          }
-        }}
-        notes={notes}
-        setNotes={setNotes}
-        notesSaveState={notesSaveState}
-      />
+      {data.status === "generating" ? (
+        <Card className="flex flex-col items-center justify-center space-y-4 p-12 text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-muted" />
+          <h3 className="text-lg font-medium">Design is generating...</h3>
+          <p className="text-sm text-muted">This typically takes 15-30 seconds. The page will update automatically.</p>
+        </Card>
+      ) : (
+        <DesignArtifactGrid
+          data={data}
+          t={t}
+          versions={versions}
+          designId={id}
+          compareA={compareA}
+          compareB={compareB}
+          setCompareA={setCompareA}
+          setCompareB={setCompareB}
+          diffText={diffText}
+          onCompare={async () => {
+            if (compareA === "" || compareB === "") return;
+            try {
+              const r = await api<{ diff_markdown: string }>(
+                `/designs/${id}/versions/compare?a=${compareA}&b=${compareB}`,
+              );
+              setDiffText(r.diff_markdown);
+            } catch {
+              setDiffText(null);
+            }
+          }}
+          notes={notes}
+          setNotes={setNotes}
+          notesSaveState={notesSaveState}
+        />
+      )}
 
       {data.discussion_conversation_id != null && data.discussion_conversation_id > 0 ? (
         <RealtimeMessagingPanel conversationId={data.discussion_conversation_id} />
