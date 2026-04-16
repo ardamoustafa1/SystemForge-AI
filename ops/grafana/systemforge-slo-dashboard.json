@@ -1,0 +1,45 @@
+{
+  "title": "SystemForge SLO Dashboard",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "panels": [
+    {
+      "title": "Generation p95 Latency (ms)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_latency_ms_bucket{path=~\".*/designs.*\"}[5m])) by (le))"
+        }
+      ]
+    },
+    {
+      "title": "Generation Failure Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(worker_events_total{event=~\"failed|generation_failed\"}[5m])) / clamp_min(sum(rate(worker_events_total[5m])), 1)"
+        }
+      ]
+    },
+    {
+      "title": "Queue Lag (Export)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(worker_events_total{worker=\"export\",event=\"queued\"}[5m])) - sum(rate(worker_events_total{worker=\"export\",event=\"processed\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "title": "WS Abuse Events",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(abuse_counter_ws_rate_limited[5m])) + sum(rate(abuse_counter_ws_payload_too_large[5m]))"
+        }
+      ]
+    }
+  ]
+}
+

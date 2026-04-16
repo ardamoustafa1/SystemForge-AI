@@ -13,6 +13,7 @@ from app.db.session import SessionLocal
 from app.messaging import repositories as msg_repo
 from app.notifications.service import notification_service
 from app.realtime.presence_service import presence_service
+from app.core.metrics import observe_worker_event, set_worker_queue_lag, observe_worker_retry
 
 logger = logging.getLogger("systemforge.delivery")
 
@@ -152,6 +153,7 @@ class DeliveryWorker:
 
     async def _process_event(self, event_id: str, fields: dict[str, str]) -> None:
         event_type = fields.get("event_type", "")
+        observe_worker_event("delivery", "received")
         if event_type == "message.created":
             payload = self._parse_message_created_payload(fields)
             if payload is None:
@@ -182,6 +184,8 @@ class DeliveryWorker:
                     )
                     await self._on_delivery_dispatched(payload=payload, recipient_user_id=recipient)
                 except Exception:
+                    observe_worker_event("delivery", "failed")
+                    observe_worker_retry("delivery", 1)
                     logger.exception(
                         "delivery_dispatch_failed",
                         extra={"event_id": event_id, "recipient_user_id": recipient},
@@ -190,6 +194,7 @@ class DeliveryWorker:
                     return
 
             await self.redis.xack(_delivery_stream(), self.group, event_id)
+            observe_worker_event("delivery", "completed")
             return
 
         if event_type in {"message.delivered", "message.read"}:
@@ -230,11 +235,13 @@ class DeliveryWorker:
                     )
                     return
             await self.redis.xack(_delivery_stream(), self.group, event_id)
+            observe_worker_event("delivery", "completed")
             return
 
         # Ignore unsupported event types in delivery stream.
         logger.debug("delivery_unsupported_event", extra={"event_id": event_id, "event_type": event_type})
         await self.redis.xack(_delivery_stream(), self.group, event_id)
+        observe_worker_event("delivery", "ignored")
         return
 
     async def process_once(self) -> int:
@@ -261,11 +268,13 @@ class DeliveryWorker:
                 block=self.settings.delivery_poll_block_ms,
             )
         if not entries:
+            set_worker_queue_lag("delivery", 0)
             return 0
 
-        processed = 0
+        processed: int = 0
         for _, stream_entries in entries:
+            set_worker_queue_lag("delivery", float(len(stream_entries)))
             for event_id, fields in stream_entries:
                 await self._process_event(event_id, fields)
-                processed += 1
+                processed = processed + 1  # type: ignore
         return processed

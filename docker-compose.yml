@@ -157,6 +157,33 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  backend-export-worker:
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "app.workers.run_export_worker"]
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
+      CORS_ORIGINS: http://localhost:3000
+      AUTO_CREATE_TABLES: "false"
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "export"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   backend-test:
     build:
       context: ./backend
@@ -195,6 +222,7 @@ services:
     build: ./frontend
     environment:
       NEXT_PUBLIC_API_URL: ${FRONTEND_NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+      BACKEND_INTERNAL_URL_WS: ${BACKEND_INTERNAL_URL_WS:-http://backend:8000/api/ws}
       NEXT_PUBLIC_APP_NAME: SystemForge AI
     depends_on:
       backend:

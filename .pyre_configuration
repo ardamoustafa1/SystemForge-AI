@@ -1,0 +1,11 @@
+{
+  "source_directories": [
+    "backend"
+  ],
+  "search_path": [
+    "backend"
+  ],
+  "exclude": [
+    "frontend/.*"
+  ]
+}

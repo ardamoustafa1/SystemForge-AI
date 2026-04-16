@@ -52,8 +52,10 @@ export class WsClient {
   }
 
   static buildDefaultUrl() {
-    const { apiUrl } = getEnv();
-    return `${apiUrl.replace(/^http/i, "ws").replace(/\/$/, "")}/ws`;
+    const isWindow = typeof window !== "undefined";
+    const proto = isWindow && window.location.protocol === "https:" ? "wss" : "ws";
+    const host = isWindow ? window.location.host : "localhost:3000";
+    return `${proto}://${host}/api/ws`;
   }
 
   connect(url: string, options: ConnectOptions = {}) {

@@ -34,6 +34,7 @@ class CurrentUserResponse(BaseModel):
     id: int
     email: EmailStr
     full_name: str
+    default_workspace_id: int | None = None
 
 
 class AuthResponse(BaseModel):

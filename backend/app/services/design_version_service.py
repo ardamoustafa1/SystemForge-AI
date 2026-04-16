@@ -4,7 +4,8 @@ from fastapi import HTTPException, status
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.models import Design, DesignInput, DesignOutputVersion, User
+from app.models import Design, DesignInput, DesignOutputVersion, WorkspaceMember
+from app.services.authorization_service import ensure_design_read_access
 from app.schemas.design import (
     DesignInputPayload,
     DesignOutputPayload,
@@ -15,15 +16,18 @@ from app.schemas.design import (
 from app.services.export_service import build_markdown_export
 
 
-def _owned_design(db: Session, design_id: int, owner_id: int) -> Design:
-    design = db.scalar(select(Design).where(Design.id == design_id, Design.owner_id == owner_id))
+def _workspace_design(db: Session, design_id: int, workspace_member: WorkspaceMember) -> Design:
+    ensure_design_read_access(workspace_member)
+    design = db.scalar(
+        select(Design).where(Design.id == design_id, Design.workspace_id == workspace_member.workspace_id)
+    )
     if not design:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Design not found")
     return design
 
 
-def list_output_versions(db: Session, user: User, design_id: int) -> list[DesignVersionSummary]:
-    _owned_design(db, design_id, user.id)
+def list_output_versions(db: Session, workspace_member: WorkspaceMember, design_id: int) -> list[DesignVersionSummary]:
+    _workspace_design(db, design_id, workspace_member)
     rows = db.scalars(
         select(DesignOutputVersion)
         .where(DesignOutputVersion.design_id == design_id)
@@ -41,8 +45,13 @@ def list_output_versions(db: Session, user: User, design_id: int) -> list[Design
     ]
 
 
-def get_output_version_detail(db: Session, user: User, design_id: int, version_id: int) -> DesignVersionDetail:
-    _owned_design(db, design_id, user.id)
+def get_output_version_detail(
+    db: Session,
+    workspace_member: WorkspaceMember,
+    design_id: int,
+    version_id: int,
+) -> DesignVersionDetail:
+    _workspace_design(db, design_id, workspace_member)
     row = db.scalar(
         select(DesignOutputVersion).where(
             DesignOutputVersion.id == version_id,
@@ -64,12 +73,12 @@ def get_output_version_detail(db: Session, user: User, design_id: int, version_i
 
 def compare_output_versions(
     db: Session,
-    user: User,
+    workspace_member: WorkspaceMember,
     design_id: int,
     version_a_id: int,
     version_b_id: int,
 ) -> DesignVersionCompareResponse:
-    design = _owned_design(db, design_id, user.id)
+    design = _workspace_design(db, design_id, workspace_member)
     va = db.scalar(
         select(DesignOutputVersion).where(
             DesignOutputVersion.id == version_a_id,
@@ -107,3 +116,35 @@ def compare_output_versions(
         version_b_id=version_b_id,
         diff_markdown=diff_markdown,
     )
+
+
+def explain_output_diff(
+    db: Session,
+    workspace_member: WorkspaceMember,
+    design_id: int,
+    version_a_id: int,
+    version_b_id: int,
+) -> dict:
+    compared = compare_output_versions(db, workspace_member, design_id, version_a_id, version_b_id)
+    added = 0
+    removed = 0
+    for line in compared.diff_markdown.splitlines():
+        if line.startswith("+") and not line.startswith("+++"):
+            added += 1
+        if line.startswith("-") and not line.startswith("---"):
+            removed += 1
+    rationale = []
+    if added > removed:
+        rationale.append("The newer version introduces additional implementation detail and safeguards.")
+    elif removed > added:
+        rationale.append("The newer version simplifies parts of the architecture to reduce complexity.")
+    else:
+        rationale.append("The update mostly rebalances existing decisions instead of changing scope.")
+    rationale.append("Review open questions and trade-off sections for decision ownership confirmation.")
+    return {
+        "version_a_id": version_a_id,
+        "version_b_id": version_b_id,
+        "added_lines": added,
+        "removed_lines": removed,
+        "technical_explanation": " ".join(rationale),
+    }

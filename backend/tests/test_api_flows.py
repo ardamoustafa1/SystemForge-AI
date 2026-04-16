@@ -47,10 +47,23 @@ def test_register_login_me_and_protection(client):
     assert d.status_code == 200
 
 
+def test_logout_revokes_active_session(client):
+    headers = register_and_login(client, "revoke@example.com")
+    me_before = client.get("/api/auth/me")
+    assert me_before.status_code == 200
+
+    logout_resp = client.post("/api/auth/logout", headers=headers)
+    assert logout_resp.status_code == 200
+
+    me_after = client.get("/api/auth/me")
+    assert me_after.status_code == 401
+
+
 def test_public_share_responses_have_security_headers(client):
     r = client.get("/api/public/share/definitely-not-a-valid-token-12345")
     assert r.status_code == 404
     assert "no-store" in (r.headers.get("cache-control") or "").lower()
+    assert r.headers.get("x-api-version") == "v1"
 
 
 def test_design_ownership_denial(client):
@@ -136,3 +149,64 @@ def test_initial_version_snapshot_and_share_flow(client):
     dis = client.delete(f"/api/designs/{design_id}/share", headers=headers)
     assert dis.status_code == 200
     assert client.get(f"/api/public/share/{token}").status_code == 404
+
+
+def test_authz_contract_matrix_roles_vs_design_actions(client):
+    admin_headers = register_and_login(client, "matrix-admin@example.com")
+    admin_me = client.get("/api/auth/me")
+    assert admin_me.status_code == 200
+    workspace_id = admin_me.json()["default_workspace_id"]
+    admin_headers["X-Workspace-Id"] = str(workspace_id)
+    created = create_design(client, headers=admin_headers, title="Matrix Design")
+    assert created.status_code == 200
+    design_id = created.json()["id"]
+
+    # Editor member
+    client.cookies.clear()
+    editor_headers = register_and_login(client, "matrix-editor@example.com")
+    editor_headers["X-Workspace-Id"] = str(workspace_id)
+    client.cookies.clear()
+    login_admin = client.post("/api/auth/login", json={"email": "matrix-admin@example.com", "password": "StrongPass1"})
+    assert login_admin.status_code == 200
+    admin_headers = {"x-csrf-token": login_admin.cookies.get("sf_csrf_token"), "X-Workspace-Id": str(workspace_id)}
+    invite_editor = client.post(
+        f"/api/workspaces/{workspace_id}/members",
+        json={"email": "matrix-editor@example.com", "role": "editor"},
+        headers=admin_headers,
+    )
+    assert invite_editor.status_code in {200, 201}
+
+    # Viewer member
+    client.cookies.clear()
+    viewer_headers = register_and_login(client, "matrix-viewer@example.com")
+    viewer_headers["X-Workspace-Id"] = str(workspace_id)
+    client.cookies.clear()
+    login_admin = client.post("/api/auth/login", json={"email": "matrix-admin@example.com", "password": "StrongPass1"})
+    assert login_admin.status_code == 200
+    admin_headers = {"x-csrf-token": login_admin.cookies.get("sf_csrf_token"), "X-Workspace-Id": str(workspace_id)}
+    invite_viewer = client.post(
+        f"/api/workspaces/{workspace_id}/members",
+        json={"email": "matrix-viewer@example.com", "role": "viewer"},
+        headers=admin_headers,
+    )
+    assert invite_viewer.status_code in {200, 201}
+
+    # Editor can update notes
+    client.cookies.clear()
+    editor_login = client.post("/api/auth/login", json={"email": "matrix-editor@example.com", "password": "StrongPass1"})
+    assert editor_login.status_code == 200
+    editor_headers = {"x-csrf-token": editor_login.cookies.get("sf_csrf_token"), "X-Workspace-Id": str(workspace_id)}
+    editor_note = client.patch(f"/api/designs/{design_id}/notes", json={"notes": "editor-note"}, headers=editor_headers)
+    assert editor_note.status_code == 200
+
+    # Viewer can read but cannot mutate
+    client.cookies.clear()
+    viewer_login = client.post("/api/auth/login", json={"email": "matrix-viewer@example.com", "password": "StrongPass1"})
+    assert viewer_login.status_code == 200
+    viewer_headers = {"x-csrf-token": viewer_login.cookies.get("sf_csrf_token"), "X-Workspace-Id": str(workspace_id)}
+    viewer_get = client.get(f"/api/designs/{design_id}", headers=viewer_headers)
+    assert viewer_get.status_code == 200
+    viewer_note = client.patch(f"/api/designs/{design_id}/notes", json={"notes": "viewer-note"}, headers=viewer_headers)
+    assert viewer_note.status_code == 403
+    viewer_share = client.post(f"/api/designs/{design_id}/share", headers=viewer_headers)
+    assert viewer_share.status_code == 403

@@ -21,6 +21,8 @@ async def _check_worker(worker: str) -> int:
             await redis.exists(f"{settings.outbox_stream_prefix}:delivery")
         elif worker == "notification":
             await redis.exists(f"{settings.outbox_stream_prefix}:notify")
+        elif worker == "export":
+            await redis.exists(f"{settings.outbox_stream_prefix}:export")
         return 0
     except Exception:
         return 1
@@ -28,7 +30,7 @@ async def _check_worker(worker: str) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--worker", choices=["outbox", "delivery", "notification"], required=True)
+    parser.add_argument("--worker", choices=["outbox", "delivery", "notification", "export"], required=True)
     args = parser.parse_args()
     rc = asyncio.run(_check_worker(args.worker))
     sys.exit(rc)

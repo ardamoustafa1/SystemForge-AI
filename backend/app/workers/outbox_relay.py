@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.core.redis import get_redis_client
 from app.db.session import SessionLocal
 from app.messaging import repositories as repo
+from app.core.metrics import observe_worker_event
 
 logger = logging.getLogger("systemforge.outbox")
 
@@ -105,6 +106,7 @@ class OutboxRelayWorker:
                         # Another recovery worker may have already transitioned this row.
                         continue
                 processed += 1
+                observe_worker_event("outbox", "published")
                 logger.info(
                     "outbox_published",
                     extra={
@@ -114,6 +116,7 @@ class OutboxRelayWorker:
                     },
                 )
             except Exception as exc:
+                observe_worker_event("outbox", "failed")
                 backoff = _next_backoff_seconds(event.attempts or 1)
                 with SessionLocal() as db:
                     marked = repo.mark_outbox_event_failed(

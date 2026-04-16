@@ -9,6 +9,12 @@ import httpx
 logger = logging.getLogger("systemforge.notifications.providers")
 
 
+def _redact_token(token: str) -> str:
+    if len(token) <= 8:
+        return "***"
+    return f"{token[:4]}...{token[-4:]}"
+
+
 @dataclass(frozen=True)
 class NotificationResult:
     ok: bool
@@ -31,13 +37,13 @@ class MockPushProvider:
     async def send_fcm(self, *, token: str, title: str, body: str, data: dict) -> NotificationResult:
         if "fail" in token:
             return NotificationResult(ok=False, provider="fcm", token=token, error="mock_fcm_delivery_failed")
-        logger.info("mock_fcm_sent", extra={"token": token, "title": title})
+        logger.info("mock_fcm_sent", extra={"token": _redact_token(token), "title": title})
         return NotificationResult(ok=True, provider="fcm", token=token)
 
     async def send_apns(self, *, token: str, title: str, body: str, data: dict) -> NotificationResult:
         if "fail" in token:
             return NotificationResult(ok=False, provider="apns", token=token, error="mock_apns_delivery_failed")
-        logger.info("mock_apns_sent", extra={"token": token, "title": title})
+        logger.info("mock_apns_sent", extra={"token": _redact_token(token), "title": title})
         return NotificationResult(ok=True, provider="apns", token=token)
 
 

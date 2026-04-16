@@ -16,6 +16,7 @@ async def generate_structured_design(
     input_payload: DesignInputPayload,
     *,
     scale_stance: ScaleStance = "balanced",
+    output_language: str = "en",
 ) -> tuple[DesignOutputPayload, int, str]:
     settings = get_settings()
     started = time.perf_counter()
@@ -33,11 +34,11 @@ async def generate_structured_design(
         )
         return _done(fallback, elapsed, "fallback-no-api-key")
 
-    system_prompt = build_system_prompt(scale_stance)
-    user_prompt = build_user_prompt(input_payload, scale_stance)
+    system_prompt = build_system_prompt(scale_stance, output_language=output_language)
+    user_prompt = build_user_prompt(input_payload, scale_stance, output_language=output_language)
 
     try:
-        raw = await create_structured_response(system_prompt=system_prompt, user_prompt=user_prompt)
+        raw, total_tokens = await create_structured_response(system_prompt=system_prompt, user_prompt=user_prompt)
         parsed = parse_structured_output(raw)
     except (LLMClientError, LLMOutputParseError) as exc:
         logger.warning(
@@ -51,6 +52,11 @@ async def generate_structured_design(
     elapsed = int((time.perf_counter() - started) * 1000)
     logger.info(
         "generation_success",
-        extra={"project_title": input_payload.project_title, "elapsed_ms": elapsed, "model": settings.openai_model},
+        extra={
+            "project_title": input_payload.project_title,
+            "elapsed_ms": elapsed,
+            "model": settings.openai_model,
+            "total_tokens": total_tokens,
+        },
     )
     return _done(parsed, elapsed, settings.openai_model)

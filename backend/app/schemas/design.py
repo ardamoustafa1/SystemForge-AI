@@ -19,6 +19,11 @@ class DesignInputPayload(BaseModel):
     data_sensitivity: Literal["low", "medium", "high", "critical"]
     real_time_required: bool
     mode: Literal["interview", "product"]
+    document_context: str | None = Field(
+        default=None, 
+        max_length=50000, 
+        description="Raw text from uploaded PRD or design document"
+    )
 
 
 class Scorecard(BaseModel):
@@ -32,6 +37,10 @@ class Scorecard(BaseModel):
     biggest_bottleneck: str
     first_optimization: str
     avoid_overengineering: str
+class EstimatedCloudCost(BaseModel):
+    monthly_usd_min: int = Field(ge=0)
+    monthly_usd_max: int = Field(ge=0)
+    cost_breakdown: list[str] = Field(description="Top 3 to 5 cost drivers (e.g., EC2 instances, RDS transfer, ECS)")
 
 
 class DesignOutputPayload(BaseModel):
@@ -54,6 +63,10 @@ class DesignOutputPayload(BaseModel):
     recommended_implementation_phases: list[str]
     engineering_checklist: list[str]
     architecture_scorecard: Scorecard
+    estimated_cloud_cost: EstimatedCloudCost | None = Field(
+        default=None,
+        description="Rough estimation of monthly cloud cost on AWS/GCP based on traffic and scale requirements."
+    )
     suggested_mermaid_diagram: str
     final_recommendation: str
     assumptions: list[str] = Field(default_factory=list)
@@ -71,6 +84,7 @@ class DesignOutputPayload(BaseModel):
 class CreateDesignRequest(BaseModel):
     input: DesignInputPayload
     scale_stance: ScaleStance = "balanced"
+    output_language: str = Field(default="en", max_length=5, description="ISO language code for AI output (en, tr, de)")
 
 
 class DesignSummary(BaseModel):
@@ -118,6 +132,7 @@ class PublicDesignResponse(BaseModel):
 
 class RegenerateDesignRequest(BaseModel):
     scale_stance: ScaleStance = "balanced"
+    output_language: str = Field(default="en", max_length=5, description="ISO language code for AI output (en, tr, de)")
 
 
 class RegenerateDesignResponse(BaseModel):
@@ -157,6 +172,36 @@ class ExportResponse(BaseModel):
     content: str
 
 
+class CostAnalysisRequest(BaseModel):
+    traffic_multiplier: float = Field(default=1.0, ge=0.25, le=20.0)
+    data_multiplier: float = Field(default=1.0, ge=0.25, le=20.0)
+    reliability_profile: Literal["lean", "balanced", "critical"] = "balanced"
+
+
+class CostAnalysisResponse(BaseModel):
+    design_id: int
+    monthly_usd_min: int
+    monthly_usd_max: int
+    yearly_usd_min: int
+    yearly_usd_max: int
+    confidence: Literal["low", "medium", "high"]
+    breakdown: list[str]
+    optimization_recommendations: list[str]
+
+
+class ExportJobCreateResponse(BaseModel):
+    job_id: str
+    status: Literal["queued", "running", "completed", "failed"]
+
+
+class ExportJobStatusResponse(BaseModel):
+    job_id: str
+    status: Literal["queued", "running", "completed", "failed"]
+    format: Literal["pdf", "markdown"] | None = None
+    filename: str | None = None
+    error: str | None = None
+
+
 class PaginatedDesignSummaryResponse(BaseModel):
     items: list[DesignSummary]
     total: int
@@ -168,7 +213,48 @@ class UpdateDesignNotesRequest(BaseModel):
     notes: str = Field(max_length=5000)
 
 
+class UpdateDesignArchitectureRequest(BaseModel):
+    mermaid: str = Field(min_length=1, max_length=50000)
+
+
 class UpdateDesignNotesResponse(BaseModel):
     design_id: int
     notes: str
     updated_at: datetime
+
+
+class DesignReviewStatusResponse(BaseModel):
+    design_id: int
+    review_status: Literal["draft", "in_review", "approved", "changes_requested"]
+    review_owner_user_id: int | None = None
+    reviewed_at: datetime | None = None
+    review_decision_note: str = ""
+
+
+class UpdateDesignReviewRequest(BaseModel):
+    review_status: Literal["draft", "in_review", "approved", "changes_requested"]
+    review_owner_user_id: int | None = None
+    review_decision_note: str = Field(default="", max_length=2000)
+
+
+class DesignCommentOut(BaseModel):
+    id: int
+    design_id: int
+    user_id: int | None = None
+    author_name: str | None = None
+    content: str
+    created_at: datetime
+
+
+class CreateDesignCommentRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class CostCalibrationResponse(BaseModel):
+    design_id: int
+    estimated_monthly_usd_min: int
+    estimated_monthly_usd_max: int
+    calibrated_monthly_usd_min: int
+    calibrated_monthly_usd_max: int
+    calibration_factor: float
+    confidence: Literal["low", "medium", "high"]

@@ -148,7 +148,13 @@ export default function SharedDesignPage() {
         </div>
       </Card>
 
-      <DesignArtifactGrid data={data} t={t} />
+      {data.output ? (
+        <DesignArtifactGrid data={data as DesignRecord & { output: NonNullable<DesignRecord["output"]> }} t={t} />
+      ) : (
+        <Card className="p-6">
+          <p className="text-sm text-white/60">{t("sharePage.loadFailed")}</p>
+        </Card>
+      )}
     </div>
   );
 }

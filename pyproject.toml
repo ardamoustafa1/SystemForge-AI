@@ -1,0 +1,7 @@
+[tool.pyre]
+source_directories = ["backend"]
+search_path = ["backend"]
+
+[tool.pyre2]
+search_paths = ["backend"]
+include_paths = ["backend"]

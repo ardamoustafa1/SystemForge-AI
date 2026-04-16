@@ -7,7 +7,7 @@ class LLMClientError(Exception):
     pass
 
 
-async def create_structured_response(system_prompt: str, user_prompt: str) -> str:
+async def create_structured_response(system_prompt: str, user_prompt: str) -> tuple[str, int]:
     """
     Calls an OpenAI-compatible Chat Completions API and returns the assistant message text (JSON string).
     Works with OpenAI, Groq, Together, Mistral (OpenAI mode), Ollama (/v1), and similar providers.
@@ -33,6 +33,13 @@ async def create_structured_response(system_prompt: str, user_prompt: str) -> st
 
     data = response.json()
     try:
-        return data["choices"][0]["message"]["content"]
+        content = data["choices"][0]["message"]["content"]
+        usage = data.get("usage", {}) if isinstance(data, dict) else {}
+        total_tokens = int(
+            usage.get("total_tokens")
+            or ((usage.get("prompt_tokens") or 0) + (usage.get("completion_tokens") or 0))
+            or 0
+        )
+        return content, total_tokens
     except (KeyError, IndexError, TypeError) as exc:
         raise LLMClientError("LLM response format is invalid (expected choices[0].message.content)") from exc

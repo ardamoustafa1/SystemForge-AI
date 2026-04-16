@@ -1,9 +1,9 @@
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
-sqlalchemy==2.0.36
-psycopg[binary]==3.2.3
-pydantic==2.10.3
-pydantic-settings==2.6.1
+sqlalchemy>=2.0.46,<3
+psycopg[binary]==3.2.13
+pydantic>=2.11.0,<3
+pydantic-settings>=2.8.0,<3
 email-validator==2.2.0
 python-jose==3.3.0
 bcrypt==4.0.1

@@ -1,120 +1,368 @@
 # SystemForge AI
 
-SystemForge AI is an AI-powered engineering platform that transforms product ideas and backend requirements into structured, production-oriented system design documents.
+SystemForge AI is a full-stack AI engineering workspace that turns product requirements into structured, production-oriented system design artifacts.
 
-This project is intentionally **not** a chatbot wrapper. It is an artifact-first architecture workspace with scoring, trade-off analysis, diagram support, and exportable design outputs.
+It is deliberately built as an artifact-first platform rather than a generic chatbot. The core experience is centered on generating, reviewing, versioning, securing, and exporting architecture documents that engineering teams can actually use.
 
-## Product Overview
+Repository: [github.com/ardamoustafa1/SystemForge-AI](https://github.com/ardamoustafa1/SystemForge-AI)
 
-- Converts requirements into consistent engineering design artifacts
-- Produces structured sections (requirements, architecture, trade-offs, scorecards, implementation checklist)
-- Renders Mermaid architecture diagrams in the review document
-- Maintains design history for reuse and iteration
-- Supports markdown export and downloadable PDF (Unicode text via DejaVu; optional rendered Mermaid PNG page via [Kroki](https://kroki.io), disable with `MERMAID_PDF_RENDER_ENABLED=false` for air-gapped environments)
+## Why This Project Exists
 
-## Architecture Summary
+Teams often start architecture work in scattered docs, Slack threads, whiteboards, or AI chats that are hard to review and impossible to operationalize. SystemForge AI closes that gap by producing structured outputs with explicit trade-offs, diagrams, implementation checklists, and export flows.
+
+The result is a workflow that is closer to an engineering design review system than a prompt playground.
+
+## Core Value
+
+- Transform raw product/backend requirements into consistent architecture artifacts
+- Generate structured outputs instead of free-form chat responses
+- Support review workflows with comments, review status, version history, and timelines
+- Make architecture portable through Markdown, PDF, scaffold ZIP, Terraform ZIP, and task CSV exports
+- Add workspace-aware ownership, role-based access, and operational/security visibility
+
+## What You Get
+
+### Product Capabilities
+
+- AI-generated system design documents with strict schema validation
+- Executive summary, requirements, architecture notes, trade-off decisions, and engineering checklist
+- Mermaid diagram generation and in-app diagram editing/sync
+- Cost estimation plus scenario-based cost analysis and calibration hooks
+- Design review workflow with comments and approval states
+- Shareable read-only public links for design artifacts
+- Async export jobs and job-center style tracking
+- Workspace management with budgets, roles, and member administration
+- Security operations panels for abuse analytics, anomaly summaries, audit trail, and active sessions
+
+### Engineering Capabilities
+
+- Schema-first generation pipeline with safe fallback behavior
+- FastAPI backend with modular services and strict Pydantic contracts
+- Next.js App Router frontend with typed client-side API usage
+- Realtime infrastructure over WebSocket + Redis Streams
+- Background workers for generation, export, outbox relay, delivery, and notifications
+- CI coverage for backend tests, frontend build/E2E, audits, and backend static checks
+
+## Tech Stack
 
 ### Frontend
-- Next.js App Router
+
+- Next.js 15
+- React 19
 - TypeScript
-- Tailwind CSS + shadcn-style component structure
-- React Hook Form + Zod validation
-- Mermaid rendering for architecture diagrams
+- Tailwind CSS
+- SWR
+- React Hook Form + Zod
+- Mermaid
+- Playwright + Vitest
 
 ### Backend
+
 - FastAPI
-- Pydantic schemas for strict input/output contracts
-- SQLAlchemy ORM
-- JWT auth + password hashing
-- Modular services for generation, designs, and exports
+- SQLAlchemy 2
+- Pydantic 2
+- PostgreSQL
+- Redis
+- Alembic
+- Pytest
+- Sentry SDK
 
-### Data and Infra
-- PostgreSQL for core persistence
-- Redis for realtime streams, presence/session routing, and background workflows
-- Docker + docker-compose for local environment parity
+### Infrastructure and Local Tooling
 
-## Realtime Messaging Architecture
+- Docker Compose
+- Multi-service worker topology
+- GitHub Actions CI
 
-### Components
-- `backend` exposes WebSocket gateway at `GET /api/ws` and REST APIs.
-- PostgreSQL stores durable message state (`conversations`, `messages`, `message_recipients`) and `outbox_events`.
-- Redis Streams are used as the realtime/event pipeline:
-  - `sf:rt:v1:stream:delivery`
-  - `sf:rt:v1:stream:realtime:{user_id}`
-  - `sf:rt:v1:stream:notify`
-  - `sf:rt:v1:stream:notify:delayed` (zset-backed delayed queue)
-- Workers:
-  - `backend-outbox-worker` (DB outbox -> Redis Streams)
-  - `backend-delivery-worker` (delivery fanout / offline routing)
-  - `backend-notification-worker` (mock push provider + retry handling)
+## System Overview
 
-### Short Flow
-1. Client connects WebSocket and sends `session.hello`.
-2. Gateway validates/authenticates and returns `session.welcome`.
-3. Client sends `message.send`.
-4. Backend persists message + recipients + outbox event in one DB transaction.
-5. Outbox relay publishes `message.created` into delivery stream.
-6. Delivery worker routes:
-   - online recipient -> `message.new` to `realtime:{user_id}` stream
-   - offline recipient -> enqueue into notify stream
-7. Recipient acks `message.delivered` / `message.read`; backend persists and emits outbox events for downstream fanout.
+```text
+User -> Next.js frontend -> FastAPI API -> PostgreSQL
+                             |            -> Redis Streams / Redis cache
+                             |
+                             -> Generation worker
+                             -> Export worker
+                             -> Outbox relay worker
+                             -> Delivery worker
+                             -> Notification worker
+```
+
+### Main Application Areas
+
+- `frontend/`: product UI, dashboard, auth flows, review UI, settings, workspace experience
+- `backend/app/api/routes/`: REST API surface
+- `backend/app/services/`: business logic for generation, export, authz, jobs, security, and workspaces
+- `backend/app/workers/`: background workers and stream consumers
+- `backend/alembic/`: database migrations
+- `docs/`: ADRs, security docs, API governance, benchmark/load-test material
+
+## Key Features
+
+### 1. AI Design Generation
+
+The user submits a structured design brief. The backend converts that brief into a strict prompt and expects a JSON response that must satisfy `DesignOutputPayload`. If the model fails or returns malformed output, the system can fall back to schema-valid safe output for local/test use.
+
+Generated outputs include:
+
+- executive summary
+- functional and non-functional requirements
+- high-level architecture
+- architecture decisions
+- trade-offs
+- scorecard
+- cost considerations
+- recommended implementation phases
+- engineering checklist
+- Mermaid diagram
+
+### 2. Architecture Review Workflow
+
+Each design can move through review states and capture team feedback.
+
+- review status: `draft`, `in_review`, `approved`, `changes_requested`
+- comment threads on a design
+- decision timeline
+- version comparison and explain-diff flow
+- notes editing and architecture diagram sync
+
+### 3. Workspace-First Collaboration
+
+Workspaces are first-class and shape authorization behavior across the product.
+
+- list/create/update/delete workspaces
+- set default workspace
+- invite/remove members
+- role management: `admin`, `editor`, `viewer`
+- workspace token budget and alert threshold controls
+
+### 4. Export and Delivery
+
+Generated artifacts are not trapped in the UI.
+
+- Markdown export
+- PDF export
+- scaffold ZIP export
+- Terraform ZIP export
+- engineering checklist CSV export for Jira/Linear-style workflows
+- async export jobs with status and download endpoints
+
+### 5. Security and Operational Visibility
+
+The application includes security-aware product and platform behaviors.
+
+- cookie-based auth with CSRF protection for mutating requests
+- workspace-aware authorization checks
+- abuse analytics summary
+- anomaly summary
+- audit trail endpoints
+- refresh-token session visibility and revocation
+- security response headers and API deprecation/version headers
+
+## API Surface
+
+### Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `POST /api/auth/refresh`
+- `GET /api/auth/me`
+- `GET /api/auth/sessions`
+- `DELETE /api/auth/sessions/{session_id}`
+
+### Designs
+
+- `POST /api/designs`
+- `GET /api/designs`
+- `GET /api/designs/{id}`
+- `DELETE /api/designs/{id}`
+- `POST /api/designs/{id}/regenerate`
+- `PATCH /api/designs/{id}/notes`
+- `PATCH /api/designs/{id}/architecture`
+- `GET /api/designs/{id}/review`
+- `PATCH /api/designs/{id}/review`
+- `GET /api/designs/{id}/comments`
+- `POST /api/designs/{id}/comments`
+- `GET /api/designs/{id}/timeline`
+- `GET /api/designs/{id}/cost-calibration`
+- `POST /api/designs/{id}/cost-analysis`
+
+### Design Versions and Sharing
+
+- `GET /api/designs/{id}/versions`
+- `GET /api/designs/{id}/versions/{version_id}`
+- `GET /api/designs/{id}/versions/compare`
+- `GET /api/designs/{id}/versions/explain`
+- `GET /api/designs/{id}/share`
+- `POST /api/designs/{id}/share`
+- `DELETE /api/designs/{id}/share`
+- `GET /api/public/share/{token}`
+- `GET /api/public/share/{token}/export`
+
+### Exports
+
+- `GET /api/designs/{id}/export?format=markdown|pdf`
+- `POST /api/designs/{id}/export-jobs?format=pdf|markdown`
+- `GET /api/designs/export-jobs/{job_id}`
+- `GET /api/designs/export-jobs/{job_id}/download`
+- `GET /api/designs/{id}/export/scaffold`
+- `GET /api/designs/{id}/export/terraform`
+- `GET /api/designs/{id}/export/tasks-csv?provider=jira|linear`
+
+### Workspaces
+
+- `GET /api/workspaces`
+- `POST /api/workspaces`
+- `GET /api/workspaces/{workspace_id}`
+- `PATCH /api/workspaces/{workspace_id}`
+- `DELETE /api/workspaces/{workspace_id}`
+- `POST /api/workspaces/{workspace_id}/default`
+- `GET /api/workspaces/{workspace_id}/budget`
+- `PATCH /api/workspaces/{workspace_id}/budget`
+- `POST /api/workspaces/{workspace_id}/members`
+- `PATCH /api/workspaces/{workspace_id}/members/{member_id}`
+- `DELETE /api/workspaces/{workspace_id}/members/{member_id}`
+
+### Dashboard, Security, Health, Advanced
+
+- `GET /api/dashboard/ops-summary`
+- `GET /api/security/abuse-summary`
+- `GET /api/security/anomaly-summary`
+- `GET /api/security/audit-trail`
+- `GET /api/health`
+- `GET /api/health/ready`
+- `GET /api/health/api-versions`
+- `GET /api/ws`
+
+## Realtime Architecture
+
+SystemForge AI includes a Redis Streams-based realtime layer for messaging and fanout.
+
+### Important Streams
+
+- `sf:rt:v1:stream:delivery`
+- `sf:rt:v1:stream:realtime:{user_id}`
+- `sf:rt:v1:stream:notify`
+- `sf:rt:v1:stream:notify:delayed`
+
+### Worker Responsibilities
+
+- `backend-outbox-worker`: publishes DB outbox events into Redis Streams
+- `backend-delivery-worker`: routes realtime events to active users or notification queues
+- `backend-notification-worker`: handles push notification delivery/retries
+- `backend-generation-worker`: processes async design generation jobs
+- `backend-export-worker`: processes async export jobs
+
+### Realtime Flow
+
+1. Client opens WebSocket connection at `GET /api/ws`.
+2. Client sends `session.hello`.
+3. Gateway validates/authenticates and returns `session.welcome`.
+4. Client sends messages/events.
+5. Backend persists durable state and writes outbox records.
+6. Relay and delivery workers fan out events through Redis Streams.
+7. Notification worker handles offline delivery scenarios.
 
 ## Repository Structure
 
 ```text
 systemforge-ai/
+├─ .github/workflows/         # CI pipelines
 ├─ backend/
+│  ├─ alembic/                # DB migrations
 │  ├─ app/
-│  │  ├─ api/routes/
-│  │  ├─ auth/
-│  │  ├─ core/
-│  │  ├─ db/
-│  │  ├─ llm/
-│  │  ├─ models/
-│  │  ├─ schemas/
-│  │  ├─ services/
-│  │  └─ main.py
-│  ├─ .env.example
+│  │  ├─ api/routes/          # REST endpoints
+│  │  ├─ auth/                # auth dependencies and services
+│  │  ├─ core/                # config, security, metrics, infra glue
+│  │  ├─ db/                  # DB session/base setup
+│  │  ├─ llm/                 # prompts, fallback, output processing
+│  │  ├─ models/              # SQLAlchemy models
+│  │  ├─ notifications/       # provider integration
+│  │  ├─ realtime/            # websocket gateway
+│  │  ├─ schemas/             # Pydantic contracts
+│  │  ├─ services/            # business logic
+│  │  └─ workers/             # background workers
 │  ├─ requirements.txt
 │  └─ Dockerfile
+├─ docs/                      # ADRs, security, governance, reports
 ├─ frontend/
-│  ├─ app/
-│  ├─ components/
-│  ├─ features/
-│  ├─ lib/
-│  ├─ types/
-│  ├─ .env.example
+│  ├─ app/                    # Next.js app router pages
+│  ├─ components/             # reusable UI components
+│  ├─ features/               # feature-level client logic
+│  ├─ lib/                    # API client, context, helpers
+│  ├─ types/                  # frontend types
 │  ├─ package.json
 │  └─ Dockerfile
-├─ docs/
+├─ SECURITY.md
+├─ Makefile
 ├─ docker-compose.yml
-├─ .env.example
 └─ README.md
 ```
 
-## Core Backend APIs
+## Quick Start
 
-### Auth
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
+### Option A: Docker Compose
 
-### Designs
-- `POST /api/designs`
-- `GET /api/designs`
-- `GET /api/designs/{id}`
-- `DELETE /api/designs/{id}`
-- `POST /api/designs/{id}/regenerate` (placeholder contract)
-- `GET /api/designs/{id}/export?format=markdown|pdf`
+1. Copy the root environment file:
 
-### Health
-- `GET /api/health`
-- `GET /api/health/ready`
+```bash
+cp .env.example .env
+```
+
+2. Start the full stack:
+
+```bash
+docker compose up --build
+```
+
+3. Open the app:
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health endpoint: [http://localhost:8000/api/health](http://localhost:8000/api/health)
+
+### Useful Make Targets
+
+```bash
+make up
+make down
+make rebuild
+make logs
+```
+
+## Local Development Without Docker
+
+### Backend
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+### Required Local Services
+
+- PostgreSQL
+- Redis
 
 ## Environment Variables
 
-### Root `.env.example` (for docker-compose)
+### Root `.env.example`
+
+These values are used by `docker-compose.yml`.
+
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
@@ -122,185 +370,118 @@ systemforge-ai/
 - `BACKEND_REDIS_URL`
 - `BACKEND_JWT_SECRET`
 - `BACKEND_OPENAI_API_KEY`
+- `BACKEND_OPENAI_BASE_URL`
 - `BACKEND_OPENAI_MODEL`
 - `BACKEND_AUTO_CREATE_TABLES`
 - `FRONTEND_NEXT_PUBLIC_API_URL`
 - `FRONTEND_NEXT_PUBLIC_APP_NAME`
 
-### Backend `.env.example`
-- `APP_NAME`
-- `APP_ENV`
-- `API_PREFIX`
-- `CORS_ORIGINS`
-- `DATABASE_URL`
-- `REDIS_URL`
-- `JWT_SECRET`
-- `JWT_ALGORITHM`
-- `JWT_EXP_MINUTES`
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `RATE_LIMIT_PER_MINUTE`
-- `AUTO_CREATE_TABLES`
-- `NOTIFICATION_PROVIDER_MODE` (`mock` or `webhook`)
-- `NOTIFICATION_PROVIDER_TIMEOUT_SECONDS`
-- `NOTIFICATION_FCM_WEBHOOK_URL`
-- `NOTIFICATION_APNS_WEBHOOK_URL`
+### Important Runtime Notes
 
-### Frontend `.env.example`
-- `NEXT_PUBLIC_API_URL`
-- `NEXT_PUBLIC_APP_NAME`
+- `OPENAI_BASE_URL` / `BACKEND_OPENAI_BASE_URL` can be used with OpenAI-compatible providers
+- production should use a strong `JWT_SECRET`
+- `AUTO_CREATE_TABLES` should remain `false` outside local dev/test
+- `PUBLIC_APP_URL` should point to the frontend origin for public share links
 
-## Local Development
+## Database and Migrations
 
-### Option A: Docker (recommended)
-1. Copy root env:
-   - `cp .env.example .env`
-2. Run database migrations:
-   - `docker compose run --rm backend sh -lc "/app/scripts/migrate.sh"`
-3. Start services:
-   - `docker compose up --build`
-4. Open:
-   - Frontend: `http://localhost:3000`
-   - Backend docs: `http://localhost:8000/docs`
+Use Alembic for schema changes.
 
-### Run database migrations
-From `backend/`:
-- `alembic upgrade head`
-- Docker-safe helper (handles baseline stamp when needed):
-  - `docker compose run --rm backend sh -lc "/app/scripts/migrate.sh"`
+```bash
+cd backend
+alembic upgrade head
+```
 
-For local-only quick bootstrapping, `AUTO_CREATE_TABLES=true` can be used **only** in `development`/`test`.
-The backend now hard-fails startup if `AUTO_CREATE_TABLES=true` is set in non-dev environments.
-For docker-compose in this repository, `AUTO_CREATE_TABLES` is disabled and migrations are required.
-Compose also includes a one-shot `backend-migrate` service; backend/workers wait for it with `service_completed_successfully`.
+Docker-safe helper:
 
-### Migration revisions relevant to realtime
-- `0002_realtime_messaging_phase1`: realtime messaging tables + outbox table.
-- `0003_outbox_relay_hardening`: outbox processing fields/indexes.
-- `0004_realtime_messaging_indexes`: sequence/index hardening.
-- `0005_notification_delivery_tbls`: notification devices + notification attempt logs.
+```bash
+docker compose run --rm backend sh -lc "/app/scripts/migrate.sh"
+```
 
-## Realtime/Worker Topology
+Important behavior:
 
-- `backend` serves HTTP + WebSocket gateway (`/api/ws`)
-- `backend-outbox-worker` publishes `outbox_events` into Redis Streams
-- `backend-delivery-worker` consumes `sf:rt:v1:stream:delivery`
-  - active users -> writes to `sf:rt:v1:stream:realtime:{user_id}`
-  - offline users -> enqueues to `sf:rt:v1:stream:notify`
-- `backend-notification-worker` consumes `sf:rt:v1:stream:notify` and sends mock FCM/APNs
-- delayed notification retries are stored in `sf:rt:v1:stream:notify:delayed` and promoted when due
+- the backend hard-fails in non-dev environments if insecure security settings are detected
+- Compose includes a `backend-migrate` one-shot service
+- backend and workers depend on migration completion before starting
 
-### Run workers manually (non-Docker)
-From `backend/` (after DB + Redis are running and migrations applied):
-- Outbox relay: `python -m app.workers.run_outbox_relay`
-- Delivery worker: `python -m app.workers.run_delivery_worker`
-- Notification worker: `python -m app.workers.run_notification_worker`
+## Testing and Quality Gates
 
-### Option B: Run services individually
-1. Start Postgres + Redis locally.
-2. Backend:
-   - `cd backend`
-   - `cp .env.example .env`
-   - `pip install -r requirements.txt`
-   - `uvicorn app.main:app --reload`
-3. Frontend:
-   - `cd frontend`
-   - `cp .env.example .env.local`
-   - `npm install`
-   - `npm run dev`
+### Backend
 
-## Testing
+```bash
+docker compose run --rm backend-test
+```
 
-### Backend tests
-- `cd backend`
-- `pip install -r requirements.txt`
-- `python -m pytest tests -q`
+Or locally:
 
-### Backend tests with Docker
-- `docker compose run --rm backend-test`
+```bash
+cd backend
+pytest tests -q
+```
 
-### Frontend tests
-- `cd frontend`
-- `npm install`
-- `npm run test`
+### Frontend
 
-## Setup Notes
+```bash
+cd frontend
+npm run build
+npm run test
+npm run test:e2e
+```
 
-- Production path should use Alembic migrations and keep `AUTO_CREATE_TABLES=false`.
-- Cookie auth is used with:
-  - `httpOnly` access token cookie
-  - SameSite policy via config
-  - CSRF double-submit token for mutating requests
-- If no OpenAI key is provided, generation falls back to a schema-valid demo output for local testing.
+### CI
 
-## Realtime Implementation Status (Truthful)
+GitHub Actions currently runs:
 
-### Implemented
-- WebSocket protocol envelope + runtime validation on backend/frontend.
-- Session lifecycle basics: `session.hello`, `session.welcome`, heartbeat (`presence.heartbeat`/`pong`).
-- Durable message write path with idempotency (`sender_user_id`, `client_msg_id`).
-- Recipient row creation and authorization checks for delivered/read acknowledgements.
-- Transactional outbox pattern and outbox relay worker with retry-safe status transitions.
-- Delivery worker fanout to online users and offline notification enqueue.
-- Notification worker with delayed retry scheduling and mock provider boundary.
-- Sync replay endpoint behavior via `sync.request` backed by durable DB history.
-- Backend tests for protocol/service flow and integration-style happy-path coverage.
+- backend static checks (`ruff`, `pyre`)
+- backend tests in Docker
+- frontend type/build/E2E flow
+- dependency audits
 
-### Partial / intentionally bounded
-- `session.resume` is now server-side replay capable for bounded per-conversation windows; clients may still call `sync.request` when replay windows are truncated (`requires_sync=true`).
-- `delivery.updated` and `read.updated` are fanned out through the delivery stream worker path to active conversation members.
-- Push integration supports `mock` and `webhook` provider modes; first-party FCM/APNs SDK adapters and full token-management product flows remain future work.
-- Frontend realtime UI is functional for protocol flow validation, but still marked experimental for full chat-product UX.
+## Security Model
 
-## How Generation Works
+SystemForge AI includes several baseline security measures:
 
-1. Frontend submits structured design input.
-2. Backend builds a strict engineering prompt.
-3. OpenAI returns JSON; parser validates against `DesignOutputPayload`.
-4. On malformed output/provider failure, safe fallback output is used.
-5. Design input/output is persisted and rendered in a review-document UI.
-6. Export service builds markdown and can render a PDF for download (text plus optional diagram image).
+- HTTP-only cookie auth for browser sessions
+- CSRF protection on mutating endpoints
+- security response headers
+- request-size enforcement for generation payloads
+- workspace-aware authorization checks
+- ownership checks on export jobs and design access
+- session revocation APIs
+- public share links with read-only token-based access
 
-## CI and testing
+See also: [SECURITY.md](SECURITY.md)
 
-- **Backend:** `docker compose run --rm backend-test` (pytest, integration + unit).
-- **Frontend:** `cd frontend && npm run build && npm run test:e2e` (Playwright smoke against `next start`).
-- GitHub Actions (`.github/workflows/ci.yml`) runs both on push/PR to `main`/`master`.
+## Documentation
 
-Security practices for keys, share links, and reporting: see [SECURITY.md](SECURITY.md).
+Architecture, governance, and security docs live under `docs/`.
 
-## Showcase Features
+- [Case Study](docs/CASE_STUDY.md)
+- [ADR-001 Workspace-First Authz](docs/ADR-001-workspace-first-authz.md)
+- [Threat Model](docs/THREAT_MODEL.md)
+- [Security Posture](docs/SECURITY_POSTURE.md)
+- [Benchmark Plan](docs/BENCHMARK_PLAN.md)
+- [API Versioning Policy](docs/API_VERSIONING.md)
+- [API Governance Playbook](docs/API_CONTRACT_GOVERNANCE_PLAYBOOK.md)
+- [Load Test Report](docs/LOAD_TEST_REPORT.md)
+- [Authz Contract Matrix](docs/AUTHZ_CONTRACT_MATRIX.md)
+- [Async DB Migration Roadmap](docs/ASYNC_DB_MIGRATION_ROADMAP.md)
+- [Secrets Rotation & Break-Glass](docs/SECRETS_ROTATION_BREAK_GLASS.md)
+- [WebSocket Fanout Simplification](docs/WEBSOCKET_FANOUT_SIMPLIFICATION.md)
 
-- Premium landing page with clear product differentiation
-- Auth-protected engineering workspace
-- Structured new-design flow with strong validation
-- Design review page with scorecard + Mermaid toggle (rendered/raw)
-- Project history with search and metadata
-- Export-ready architecture document output
+## Current Scope and Limitations
 
-## Future Improvements
+- Playwright coverage is intentionally a smoke suite, not a full regression matrix
+- some advanced operational wiring is environment-dependent
+- WebSocket fanout can still be simplified for very high-concurrency deployments
+- this repository is optimized for local/full-stack engineering showcase and product iteration
 
-- Async regeneration/export jobs with Celery + Redis
-- Richer PDF output (typography, branded templates; diagrams are already optional via Kroki)
-- Team/workspace support with role-based permissions
-- Usage analytics and audit trails
-- Advanced filter facets and saved views in project history
+## Portfolio Positioning
 
-## Current Limitations
+This project supports a statement like:
 
-- Regeneration currently executes synchronously and should be moved to a queued async job model for high-load environments.
-- Playwright E2E is intentionally a small smoke suite; deep product flows are not fully covered.
-- `AUTO_CREATE_TABLES` exists only for local convenience and should remain disabled in production.
-- Full resume replay and delivery/read update fanout remain in-progress realtime milestones.
+> Built an AI-powered engineering workspace that transforms product requirements into production-grade architecture artifacts with review workflows, exports, workspace-based authorization, realtime infrastructure, and full-stack operational tooling using FastAPI, Next.js, PostgreSQL, Redis, and LLM pipelines.
 
-## Portfolio / CV Positioning
+## License
 
-This project supports a credible statement like:
-
-> Built an AI-powered system design platform that transforms startup ideas and backend requirements into structured production-grade architecture documents with trade-off analysis, scorecards, and visual diagrams using FastAPI, Next.js, PostgreSQL, Redis, and LLM workflows.
-
-Recommended emphasis in interviews:
-- schema-first AI generation (not generic chat)
-- clean full-stack modular architecture
-- production-style auth, ownership checks, and export pipeline design
-- polished UX with strong error/empty/loading states and document-review experience
+No license file is currently included in the repository. Add one if you want to make usage terms explicit.

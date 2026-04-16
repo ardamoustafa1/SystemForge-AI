@@ -14,4 +14,5 @@ export const createDesignSchema = z.object({
   real_time_required: z.boolean(),
   mode: z.enum(["interview", "product"]),
   scale_stance: z.enum(["balanced", "conservative", "aggressive"]),
+  document_context: z.string().trim().optional(),
 });

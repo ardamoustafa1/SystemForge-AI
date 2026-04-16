@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 import json
 import logging
 from datetime import datetime, timezone
@@ -13,6 +14,7 @@ from pydantic import ValidationError
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
+from app.messaging import repositories as msg_repo
 from app.messaging.schemas import MessageCreateCommand
 from app.messaging.service import (
     MessagingPermissionError,
@@ -39,6 +41,7 @@ from app.realtime.protocol import (
     SyncRequestPayload,
     TypingPayload,
 )
+from app.services.abuse_analytics_service import record_abuse_event
 
 logger = logging.getLogger("systemforge.realtime")
 router = APIRouter(tags=["realtime"])
@@ -109,6 +112,7 @@ def _authenticate_websocket(websocket: WebSocket) -> User | None:
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         user_id = int(payload.get("sub", "0"))
+        token_version = int(payload.get("tv", 0))
     except (JWTError, ValueError):
         return None
     if user_id <= 0:
@@ -116,6 +120,8 @@ def _authenticate_websocket(websocket: WebSocket) -> User | None:
     with SessionLocal() as db:
         user = db.get(User, user_id)
         if not user or not user.is_active:
+            return None
+        if int(user.token_version) != token_version:
             return None
         db.expunge(user)
         return user
@@ -143,23 +149,18 @@ async def websocket_gateway(websocket: WebSocket) -> None:
         heartbeat_interval_sec=presence_service.recommended_heartbeat_interval_seconds(),
     )
     session_hello_received = False
+    message_window = deque()
 
     settings = get_settings()
     user_stream = f"{settings.outbox_stream_prefix}:realtime:{user.id}"
-    ws_group = f"ws-{socket_id}"
+    last_stream_id = "$"
 
     async def _stream_forwarder() -> None:
         redis = presence_service.redis
-        try:
-            await redis.xgroup_create(name=user_stream, groupname=ws_group, id="$", mkstream=True)
-        except Exception as exc:
-            if "BUSYGROUP" not in str(exc):
-                raise
         while True:
-            entries = await redis.xreadgroup(
-                groupname=ws_group,
-                consumername=socket_id,
-                streams={user_stream: ">"},
+            nonlocal last_stream_id
+            entries = await redis.xread(
+                streams={user_stream: last_stream_id},
                 count=100,
                 block=2000,
             )
@@ -181,7 +182,7 @@ async def websocket_gateway(websocket: WebSocket) -> None:
                             correlation_event_id=None,
                         )
                     )
-                    await redis.xack(user_stream, ws_group, entry_id)
+                    last_stream_id = entry_id
 
     forwarder_task = asyncio.create_task(_stream_forwarder())
 
@@ -189,7 +190,33 @@ async def websocket_gateway(websocket: WebSocket) -> None:
     try:
         while True:
             raw = await websocket.receive_text()
+            now_ts = _now_ms()
+            message_window.append(now_ts)
+            while message_window and now_ts - message_window[0] > 10_000:
+                message_window.popleft()
+            if len(message_window) > 120:
+                await record_abuse_event(
+                    event_type="ws-rate-limited",
+                    actor=str(user.id),
+                    severity=65,
+                    metadata={"socket_id": socket_id},
+                )
+                await _send_error(
+                    websocket=websocket,
+                    code="WS_RATE_LIMITED",
+                    message="Too many websocket events. Slow down and retry.",
+                    retryable=True,
+                    retry_after_ms=3000,
+                    trace_id=None,
+                )
+                continue
             if len(raw) > 32_768:
+                await record_abuse_event(
+                    event_type="ws-payload-too-large",
+                    actor=str(user.id),
+                    severity=75,
+                    metadata={"socket_id": socket_id},
+                )
                 await _send_error(
                     websocket=websocket,
                     code="PAYLOAD_TOO_LARGE",
@@ -200,7 +227,7 @@ async def websocket_gateway(websocket: WebSocket) -> None:
                 continue
 
             try:
-                envelope_data = json.loads(raw)
+                envelope_data = json.loads(str(raw))
             except json.JSONDecodeError:
                 await _send_error(
                     websocket=websocket,
@@ -293,14 +320,14 @@ async def websocket_gateway(websocket: WebSocket) -> None:
                     )
                     continue
 
-                replayed_events = 0
+                replayed_events: int = 0
                 requires_sync = False
                 # Bounded server-side replay by conversation anchors from the client.
                 # This avoids immediate sync round-trips on reconnect while keeping
                 # replay scope explicit and predictable.
                 if resume_payload.last_server_seq_by_conversation:
                     with SessionLocal() as db:
-                        for raw_conversation_id, last_seq in list(resume_payload.last_server_seq_by_conversation.items())[:50]:
+                        for raw_conversation_id, last_seq in list(resume_payload.last_server_seq_by_conversation.items())[:50]:  # type: ignore
                             try:
                                 conversation_id = int(raw_conversation_id)
                                 sync_result = build_sync_response(
@@ -324,7 +351,7 @@ async def websocket_gateway(websocket: WebSocket) -> None:
                                         correlation_event_id=envelope.event_id,
                                     )
                                 )
-                            replayed_events += len(events)
+                            replayed_events = replayed_events + len(events)  # type: ignore
                             if bool(sync_result.get("has_more")):
                                 requires_sync = True
 
@@ -690,10 +717,6 @@ async def websocket_gateway(websocket: WebSocket) -> None:
             pass
         except Exception:
             logger.exception("ws_stream_forwarder_shutdown_failed", extra={"user_id": user.id, "socket_id": socket_id})
-        try:
-            await presence_service.redis.xgroup_destroy(user_stream, ws_group)
-        except Exception:
-            pass
         await connection_manager.disconnect(socket_id=socket_id)
         try:
             await presence_service.unregister_session(user_id=user.id, socket_id=socket_id)

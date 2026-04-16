@@ -36,7 +36,7 @@ export default function DesignsHistoryPage() {
     setError("");
     api<DesignListResponse>(`/designs${query ? `?q=${encodeURIComponent(query)}` : ""}`)
       .then((res) => setItems(res.items))
-      .catch((e) => setError(e instanceof Error ? e.message : "Unable to load design history"))
+      .catch((e) => setError(e instanceof Error ? e.message : t("history.loadFailed")))
       .finally(() => setLoading(false));
   }, [query]);
 
@@ -60,29 +60,30 @@ export default function DesignsHistoryPage() {
         }
       />
 
-      <Card className="p-4">
-        <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("history.searchPlaceholder")}
-              className="pl-9"
-            />
-          </div>
-          <Button variant="outline" disabled title="Filter support is planned">
-            Status Filter (Soon)
+      <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-8 border-t border-white/5">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("history.searchPlaceholder")}
+            className="pl-11 h-12 bg-[#0a0a0a] border-white/5 text-white/90 placeholder:text-white/30 rounded-xl focus-visible:ring-1 focus-visible:ring-white/20 focus-visible:border-white/20"
+          />
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" disabled className="h-12 border-white/5 bg-[#0a0a0a] text-white/40 rounded-xl font-medium">
+            {t("history.statusFilterSoon")}
           </Button>
           <Button
             variant="outline"
+            className="h-12 border-white/5 bg-[#0a0a0a] text-white/60 hover:text-white/90 hover:bg-white/5 rounded-xl font-medium"
             onClick={() => setSortBy((current) => (current === "recent" ? "title" : "recent"))}
           >
             <ArrowUpDown className="mr-2 h-4 w-4" />
-            {sortBy === "recent" ? "Sort: Recent" : "Sort: Title"}
+            {sortBy === "recent" ? t("history.sortRecent") : t("history.sortTitle")}
           </Button>
         </div>
-      </Card>
+      </div>
 
       {error ? (
         <Card className="p-6">
@@ -111,18 +112,24 @@ export default function DesignsHistoryPage() {
         <div className="grid gap-3">
           {sortedItems.map((design) => (
             <Link key={design.id} href={`/dashboard/designs/${design.id}`}>
-              <Card className="p-4 transition hover:border-zinc-500 hover:bg-zinc-900/20">
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                  <div>
-                    <h3 className="font-medium">{design.title}</h3>
-                    <p className="mt-1 text-sm text-muted">{design.project_type}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <Badge className="bg-transparent text-muted">
-                      <CalendarDays className="mr-1 h-3 w-3" />
+              <Card className="group flex flex-col gap-3 rounded-2xl border border-white/5 bg-[#0a0a0a] p-6 sm:flex-row sm:items-center sm:justify-between transition-all duration-300 hover:bg-white/[0.03] hover:border-white/10 hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.03)] cursor-pointer">
+                <div>
+                  <h3 className="text-base font-medium text-white/90 group-hover:text-white transition-colors">{design.title}</h3>
+                  <p className="mt-1 text-[13px] text-white/40 font-light">{design.project_type}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 justify-between sm:justify-end">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-medium tracking-widest text-white/30 uppercase flex items-center">
+                      <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
                       {new Date(design.created_at).toLocaleDateString()}
-                    </Badge>
-                    <Badge className="bg-transparent text-muted">Updated {new Date(design.updated_at).toLocaleDateString()}</Badge>
+                    </span>
+                    <span className="text-white/10">•</span>
+                    <span className="text-[11px] font-medium tracking-widest text-white/30 uppercase">
+                      {t("history.updatedLabel")} {new Date(design.updated_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/5 bg-transparent transition-colors group-hover:bg-white/10 group-hover:border-white/20 ml-2 hidden sm:flex">
+                     <span className="text-white/40 group-hover:text-white opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0">→</span>
                   </div>
                 </div>
               </Card>

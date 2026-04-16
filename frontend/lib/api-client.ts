@@ -1,4 +1,5 @@
 import { getEnv } from "@/lib/env";
+import { getActiveWorkspaceId } from "@/lib/workspace-context";
 
 type ApiErrorPayload = {
   detail?: string;
@@ -27,20 +28,37 @@ export async function apiClient<T>(path: string, init?: RequestInit): Promise<T>
     const csrf = getCookie("sf_csrf_token");
     if (csrf) headers.set("x-csrf-token", decodeURIComponent(csrf));
   }
+  const workspaceId = getActiveWorkspaceId();
+  if (workspaceId) headers.set("X-Workspace-Id", String(workspaceId));
 
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...init,
-    headers,
-    cache: "no-store",
-    credentials: "include",
-  });
+  const doRequest = () =>
+    fetch(`${apiUrl}${path}`, {
+      ...init,
+      headers,
+      cache: "no-store",
+      credentials: "include",
+    });
+  let response = await doRequest();
+  if (response.status === 401 && !path.startsWith("/auth/")) {
+    const refreshed = await fetch(`${apiUrl}/auth/refresh`, { method: "POST", credentials: "include" });
+    if (refreshed.ok) {
+      response = await doRequest();
+    }
+  }
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload;
     throw new Error(payload.error?.message ?? payload.detail ?? payload.message ?? "Request failed");
   }
 
-  return (await response.json()) as T;
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+  return JSON.parse(text) as T;
 }
 
 /** Binary responses (e.g. PDF export). Does not force JSON Content-Type on the request. */
@@ -53,12 +71,20 @@ export async function apiBlob(path: string, init?: RequestInit): Promise<Blob> {
     if (csrf) headers.set("x-csrf-token", decodeURIComponent(csrf));
   }
 
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...init,
-    headers,
-    cache: "no-store",
-    credentials: "include",
-  });
+  const doRequest = () =>
+    fetch(`${apiUrl}${path}`, {
+      ...init,
+      headers,
+      cache: "no-store",
+      credentials: "include",
+    });
+  let response = await doRequest();
+  if (response.status === 401 && !path.startsWith("/auth/")) {
+    const refreshed = await fetch(`${apiUrl}/auth/refresh`, { method: "POST", credentials: "include" });
+    if (refreshed.ok) {
+      response = await doRequest();
+    }
+  }
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload;

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from app.core.config import get_settings
 from app.core.redis import get_redis_client
 from app.notifications.service import notification_service
+from app.core.metrics import observe_worker_event
 
 logger = logging.getLogger("systemforge.notifications.worker")
 
@@ -47,12 +48,14 @@ class NotificationWorker:
         )
 
     async def _process_entry(self, entry_id: str, fields: dict[str, str]) -> None:
+        observe_worker_event("notification", "received")
         try:
             recipient_user_id = int(fields.get("recipient_user_id", "0"))
             attempts = int(fields.get("attempts", "0"))
             not_before_ms = int(fields.get("not_before_ms", "0"))
             payload = json.loads(fields.get("payload_json", "{}"))
         except Exception:
+            observe_worker_event("notification", "failed")
             logger.exception("notify_invalid_entry", extra={"entry_id": entry_id})
             await self.redis.xack(self.stream, self.group, entry_id)
             return
@@ -111,6 +114,7 @@ class NotificationWorker:
             )
         ok = any(result.ok for result in results)
         if ok:
+            observe_worker_event("notification", "completed")
             await self.redis.xack(self.stream, self.group, entry_id)
             return
 
@@ -127,6 +131,7 @@ class NotificationWorker:
             return
 
         await self._retry(recipient_user_id=recipient_user_id, payload=payload, attempts=attempts)
+        observe_worker_event("notification", "retried")
         await self.redis.xack(self.stream, self.group, entry_id)
 
     async def process_once(self) -> int:
