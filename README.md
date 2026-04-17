@@ -792,4 +792,6 @@ Versiyonlama yaklaşimi:
 
 ## 22. Lisans
 
-Repository içinde su anda bir lisans dosyasi bulunmuyor. Açik kullanim kosullari için bir lisans dosyasi (`LICENSE`) eklenmesi önerilir.
+Bu repository `MIT License` ile lisanslanmistir.
+
+- Lisans metni: [LICENSE](LICENSE)

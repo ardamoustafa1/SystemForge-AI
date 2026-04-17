@@ -187,4 +187,6 @@ See: [SECURITY.md](SECURITY.md)
 
 ## License
 
-No license file is currently included. Add a `LICENSE` file to define usage terms.
+This repository is licensed under the `MIT License`.
+
+- License text: [LICENSE](LICENSE)
