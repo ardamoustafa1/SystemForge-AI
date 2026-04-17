@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, FileDown, FileOutput, FolderArchive, Link2, RefreshCw, Trash2, CloudCog } from "lucide-react";
 
 import { api, apiBlob } from "@/lib/api";
+import { WsClient } from "@/lib/ws-client";
 import { DesignArtifactGrid } from "@/components/design/design-artifact-grid";
 import { DesignRecord, GenerationProgress, DesignReview, DesignComment } from "@/types/design";
 import { Card } from "@/components/ui/card";
@@ -142,8 +143,7 @@ export default function DesignDetailPage() {
 
   useEffect(() => {
     if (data?.status !== "generating" || !id) return;
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${window.location.host}/api/ws`);
+    const ws = new WebSocket(WsClient.buildDefaultUrl());
     ws.onopen = () => {
       ws.send(
         JSON.stringify({

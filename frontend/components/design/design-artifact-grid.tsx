@@ -131,6 +131,337 @@ export function DesignArtifactGrid({
           <p className="mt-3 text-sm text-white/50 leading-relaxed">{data.output.high_level_architecture}</p>
         </Card>
 
+        <Card className="p-6 sm:p-8 rounded-2xl border-cyan-500/10 bg-cyan-500/[0.03] shadow-xl relative overflow-hidden">
+          <h2 className="text-lg font-medium text-cyan-200">{t("detail.runtimeTopology")}</h2>
+          <p className="mt-3 text-sm text-white/60 leading-relaxed">{data.output.runtime_topology.architecture_style}</p>
+          <div className="mt-5 grid gap-5 md:grid-cols-3">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.deployableUnits")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.runtime_topology.deployable_units.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.runtimePaths")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.runtime_topology.primary_runtime_paths.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.statefulComponents")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.runtime_topology.stateful_components.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 sm:p-8 rounded-2xl border-indigo-500/10 bg-indigo-500/[0.03] shadow-xl relative overflow-hidden">
+          <h2 className="text-lg font-medium text-indigo-200">{t("detail.dataFlows")}</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.requestResponseFlow")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.data_flows.request_response_flow.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.asyncEventFlow")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.data_flows.asynchronous_event_flow.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.persistenceFlow")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.data_flows.persistence_flow.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.failureRecoveryFlow")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.data_flows.failure_recovery_flow.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        {(data.output.websocket_architecture.connection_lifecycle.length > 0 ||
+          data.output.websocket_architecture.fanout_strategy.length > 0) ? (
+          <Card className="p-6 sm:p-8 rounded-2xl border-violet-500/10 bg-violet-500/[0.03] shadow-xl relative overflow-hidden">
+            <h2 className="text-lg font-medium text-violet-200">{t("detail.websocketArchitecture")}</h2>
+            <p className="mt-3 text-sm text-white/60 leading-relaxed">{data.output.websocket_architecture.pubsub_backplane}</p>
+            <p className="mt-2 text-sm text-white/50 leading-relaxed">{data.output.websocket_architecture.sticky_session_strategy}</p>
+            <div className="mt-5 grid gap-5 md:grid-cols-3">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.websocketConnectionLifecycle")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.websocket_architecture.connection_lifecycle.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.websocketFanout")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.websocket_architecture.fanout_strategy.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.websocketScaling")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.websocket_architecture.scaling_strategy.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.websocketChannelPartitioning")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.websocket_architecture.channel_partitioning.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.websocketShardStrategy")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.websocket_architecture.shard_strategy.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.websocketTopicDesign")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.websocket_architecture.topic_design.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.websocketPartitionKeys")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.websocket_architecture.partition_keys.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Card>
+        ) : null}
+
+        {(data.output.video_streaming_architecture.streaming_protocols.length > 0 ||
+          data.output.video_streaming_architecture.cdn_strategy.length > 0) ? (
+          <Card className="p-6 sm:p-8 rounded-2xl border-sky-500/10 bg-sky-500/[0.03] shadow-xl relative overflow-hidden">
+            <h2 className="text-lg font-medium text-sky-200">{t("detail.videoStreamingArchitecture")}</h2>
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.videoProtocols")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.video_streaming_architecture.streaming_protocols.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.videoIngestPackaging")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.video_streaming_architecture.ingest_and_packaging.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.videoCdnStrategy")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.video_streaming_architecture.cdn_strategy.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.videoAdaptiveBitrate")}</h3>
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                  {data.output.video_streaming_architecture.adaptive_bitrate_strategy.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Card>
+        ) : null}
+
+        <Card className="p-6 sm:p-8 rounded-2xl border-fuchsia-500/10 bg-fuchsia-500/[0.03] shadow-xl relative overflow-hidden">
+          <h2 className="text-lg font-medium text-fuchsia-200">{t("detail.databaseArchitecture")}</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.databasePrimaryEntities")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.database_architecture.primary_entities.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.databaseSchemaDesign")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.database_architecture.schema_design.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.databaseIndexingStrategy")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.database_architecture.indexing_strategy.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.databasePartitioningStrategy")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.database_architecture.partitioning_strategy.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 sm:p-8 rounded-2xl border-orange-500/10 bg-orange-500/[0.03] shadow-xl relative overflow-hidden">
+          <h2 className="text-lg font-medium text-orange-200">{t("detail.observabilityArchitecture")}</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.observabilityLogging")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.observability_architecture.logging_strategy.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.observabilityTracing")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.observability_architecture.tracing_strategy.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.observabilityMetrics")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.observability_architecture.metrics_strategy.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.observabilityAlerting")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {[...data.output.observability_architecture.alerting_strategy, ...data.output.observability_architecture.sli_slo_targets].map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 sm:p-8 rounded-2xl border-emerald-500/10 bg-emerald-500/[0.03] shadow-xl relative overflow-hidden">
+          <h2 className="text-lg font-medium text-emerald-200">{t("detail.aiServingQueueing")}</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.aiGuardrails")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.ai_architecture.request_guardrails.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.aiInferenceOrchestration")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.ai_architecture.inference_orchestration.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.aiQueueBackpressure")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.ai_architecture.queue_and_backpressure.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.aiProviderRecovery")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {[...data.output.ai_architecture.model_provider_strategy, ...data.output.ai_architecture.fallback_and_recovery].map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 sm:p-8 rounded-2xl border-rose-500/10 bg-rose-500/[0.03] shadow-xl relative overflow-hidden">
+          <h2 className="text-lg font-medium text-rose-200">{t("detail.securityBlueprint")}</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.securityAuthFlow")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.security_architecture.auth_flow.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.securitySessionRefresh")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.security_architecture.session_and_refresh_flow.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.securityAbuseProtection")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {data.output.security_architecture.abuse_protection.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">{t("detail.securitySecretsAudit")}</h3>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/55">
+                {[...data.output.security_architecture.secrets_and_key_management, ...data.output.security_architecture.audit_and_compliance].map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+
         <Card className="p-6 sm:p-8 rounded-2xl border-white/5 bg-[#0a0a0a] shadow-xl relative overflow-hidden">
           <h2 className="text-lg font-medium text-white/90">{t("detail.functionalRequirements")}</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-white/50 leading-relaxed">

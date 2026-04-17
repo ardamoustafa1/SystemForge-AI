@@ -62,7 +62,7 @@ async def create_workspace_route(
     await enforce_rate_limit(scope="workspace-create", identifier=str(user.id), limit=10, window_seconds=3600)
     await enforce_idempotency(scope="workspace-create", owner_key=str(user.id), idempotency_key=idempotency_key, ttl_seconds=600)
     res = create_workspace(db=db, user=user, name=payload.name)
-    run_async(log_security_audit("workspace.create", actor_user_id=user.id, workspace_id=res["workspace"].id, metadata={"name": payload.name}))
+    await log_security_audit("workspace.create", actor_user_id=user.id, workspace_id=res["workspace"].id, metadata={"name": payload.name})
     return res
 
 
@@ -86,7 +86,7 @@ async def update_workspace_route(
 ):
     await enforce_idempotency("workspace-update", f"{user.id}:{workspace_id}", idempotency_key, 300)
     res = update_workspace(db=db, user=user, workspace_id=workspace_id, name=payload.name)
-    run_async(log_security_audit("workspace.update", actor_user_id=user.id, workspace_id=workspace_id, metadata={"name": payload.name}))
+    await log_security_audit("workspace.update", actor_user_id=user.id, workspace_id=workspace_id, metadata={"name": payload.name})
     return res
 
 

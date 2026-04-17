@@ -100,6 +100,20 @@ def build_system_prompt(scale_stance: ScaleStance = "balanced", output_language:
         "Every major recommendation must include rationale and trade-offs.\n"
         "If constraints appear to conflict (e.g. tiny team + global deployment + strict latency), call that tension out explicitly.\n"
         "Include concrete guidance for code organization, testability, and module boundaries where relevant.\n"
+        "Do not stop at 'what'. Always include 'how it should be implemented' using concrete deployable units, flows, and operational mechanics.\n"
+        "Your output must read like a senior engineer's implementation blueprint, not a high-level blog post.\n"
+        "For runtime_topology, name the architecture style, deployable units, runtime boundaries, and which components keep state.\n"
+        "For data_flows, describe step-by-step flows such as Client -> Gateway -> Queue -> Worker -> DB -> Fanout.\n"
+        "For multi-region/global deployments, explicitly include replication strategy, failover flow, and geo-routing approach.\n"
+        "For websocket_architecture, explicitly describe connection ownership, fanout mechanism, scaling model, sticky-session requirement or avoidance, and pub/sub backplane.\n"
+        "Do not stop at saying Redis/Kafka exists; specify channel partitioning, shard strategy, topic design, and partition keys where eventing/realtime exists.\n"
+        "For ai_architecture, explicitly describe request guardrails, queue handling, model provider strategy, inference orchestration, and fallback behavior.\n"
+        "For queue handling, include concrete backpressure controls: bounded queues, load shedding policy, priority tiers, and worker concurrency caps.\n"
+        "For security_architecture, explicitly describe JWT/auth flow, refresh/session rotation, abuse protection, secret handling, and audit coverage.\n"
+        "Security depth must include zero-trust service-to-service posture, fine-grained RBAC/ABAC authorization boundaries, and encryption strategy in transit and at rest.\n"
+        "For database_architecture, explicitly describe main entities, schema boundaries, indexing strategy, partitioning strategy, and migration/consistency rules.\n"
+        "For observability_architecture, explicitly describe OpenTelemetry tracing, metrics, alerts, and SLI/SLO targets.\n"
+        "If the workload involves video, live classes, or streaming media, explicitly describe HLS/WebRTC choice, ingest, CDN, and adaptive bitrate strategy.\n"
         "Mermaid rules for suggested_mermaid_diagram:\n"
         "- Use flowchart LR or TB.\n"
         "- Node identifiers MUST be ASCII-only: letters, digits, underscore (e.g. api_gw, domain_core, db_primary).\n"
@@ -121,6 +135,18 @@ def build_user_prompt(input_payload: DesignInputPayload, scale_stance: ScaleStan
         )
     if input_payload.deployment_scope == "global":
         hints.append("Input is global scope: address latency, residency, and cross-region data ownership.")
+    if input_payload.deployment_scope in {"multi-region", "global"}:
+        hints.append("For multi-region/global: include replication mode, failover steps (RPO/RTO), and geo-routing policy (latency/health aware).")
+    if input_payload.real_time_required:
+        hints.append("Realtime is required: specify websocket gateway ownership, horizontal scaling strategy, pub/sub backplane, and fanout flow.")
+        hints.append("For realtime/event infrastructure, include channel partitioning, shard strategy, topic names, and partition keys.")
+    hints.append("Backpressure must be explicit: queue limits, load shedding, priority queue policy, and worker throttle/concurrency controls.")
+    hints.append("Security must be explicit: zero-trust boundaries, RBAC/ABAC rules, and encryption in transit + at rest with key management.")
+    if any(token in f'{input_payload.project_type} {input_payload.problem_statement}'.lower() for token in ["video", "stream", "live", "education", "lesson", "course"]):
+        hints.append("Video/live workload detected: include HLS vs WebRTC rationale, ingest/packaging pipeline, CDN, and adaptive bitrate details.")
+    hints.append("Always provide explicit request flow, async flow, persistence flow, and failure-recovery flow.")
+    hints.append("Include concrete database schema/indexing/partitioning guidance and observability details with tracing, metrics, and alert strategy.")
+    hints.append("Avoid generic labels like 'bounded modular architecture' unless followed by concrete deployable units and runtime paths.")
 
     hints_block = "\n".join(f"- {h}" for h in hints) if hints else "(none)"
 
@@ -135,7 +161,7 @@ def build_user_prompt(input_payload: DesignInputPayload, scale_stance: ScaleStan
         "Additional analytic hints:\n"
         f"{hints_block}\n\n"
         "Project input JSON:\n"
-        f"{input_payload.model_dump_json(exclude={{'document_context'}}, indent=2)}\n\n"
+        f"{input_payload.model_dump_json(exclude={'document_context'}, indent=2)}\n\n"
     )
     
     sanitized_context, suspicious_context, abuse_score, policy_action = _sanitize_document_context(

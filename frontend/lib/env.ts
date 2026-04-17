@@ -6,3 +6,19 @@ const ENV = {
 export function getEnv() {
   return ENV;
 }
+
+export function getWebSocketUrl() {
+  const normalizedApiUrl = ENV.apiUrl.replace(/\/$/, "");
+  let wsBase = normalizedApiUrl;
+  if (normalizedApiUrl.startsWith("https://")) {
+    wsBase = normalizedApiUrl.replace(/^https:\/\//, "wss://");
+  } else if (normalizedApiUrl.startsWith("http://")) {
+    wsBase = normalizedApiUrl.replace(/^http:\/\//, "ws://");
+  }
+
+  // Backend websocket gateway lives at `${api_prefix}/ws`.
+  if (wsBase.endsWith("/ws")) {
+    return wsBase;
+  }
+  return `${wsBase}/ws`;
+}

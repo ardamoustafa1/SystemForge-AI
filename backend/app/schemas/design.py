@@ -43,6 +43,72 @@ class EstimatedCloudCost(BaseModel):
     cost_breakdown: list[str] = Field(description="Top 3 to 5 cost drivers (e.g., EC2 instances, RDS transfer, ECS)")
 
 
+class RuntimeTopologySection(BaseModel):
+    architecture_style: str = ""
+    deployable_units: list[str] = Field(default_factory=list)
+    primary_runtime_paths: list[str] = Field(default_factory=list)
+    stateful_components: list[str] = Field(default_factory=list)
+
+
+class DataFlowSection(BaseModel):
+    request_response_flow: list[str] = Field(default_factory=list)
+    asynchronous_event_flow: list[str] = Field(default_factory=list)
+    persistence_flow: list[str] = Field(default_factory=list)
+    failure_recovery_flow: list[str] = Field(default_factory=list)
+
+
+class WebsocketArchitectureSection(BaseModel):
+    connection_lifecycle: list[str] = Field(default_factory=list)
+    fanout_strategy: list[str] = Field(default_factory=list)
+    scaling_strategy: list[str] = Field(default_factory=list)
+    sticky_session_strategy: str = ""
+    pubsub_backplane: str = ""
+    channel_partitioning: list[str] = Field(default_factory=list)
+    shard_strategy: list[str] = Field(default_factory=list)
+    topic_design: list[str] = Field(default_factory=list)
+    partition_keys: list[str] = Field(default_factory=list)
+
+
+class AIArchitectureSection(BaseModel):
+    request_guardrails: list[str] = Field(default_factory=list)
+    inference_orchestration: list[str] = Field(default_factory=list)
+    queue_and_backpressure: list[str] = Field(default_factory=list)
+    model_provider_strategy: list[str] = Field(default_factory=list)
+    fallback_and_recovery: list[str] = Field(default_factory=list)
+
+
+class SecurityArchitectureSection(BaseModel):
+    auth_flow: list[str] = Field(default_factory=list)
+    session_and_refresh_flow: list[str] = Field(default_factory=list)
+    abuse_protection: list[str] = Field(default_factory=list)
+    secrets_and_key_management: list[str] = Field(default_factory=list)
+    audit_and_compliance: list[str] = Field(default_factory=list)
+
+
+class VideoStreamingArchitectureSection(BaseModel):
+    streaming_protocols: list[str] = Field(default_factory=list)
+    ingest_and_packaging: list[str] = Field(default_factory=list)
+    cdn_strategy: list[str] = Field(default_factory=list)
+    adaptive_bitrate_strategy: list[str] = Field(default_factory=list)
+    realtime_interaction_sidecar: list[str] = Field(default_factory=list)
+
+
+class DatabaseArchitectureSection(BaseModel):
+    primary_entities: list[str] = Field(default_factory=list)
+    schema_design: list[str] = Field(default_factory=list)
+    indexing_strategy: list[str] = Field(default_factory=list)
+    partitioning_strategy: list[str] = Field(default_factory=list)
+    consistency_and_migration_notes: list[str] = Field(default_factory=list)
+
+
+class ObservabilityArchitectureSection(BaseModel):
+    logging_strategy: list[str] = Field(default_factory=list)
+    tracing_strategy: list[str] = Field(default_factory=list)
+    metrics_strategy: list[str] = Field(default_factory=list)
+    alerting_strategy: list[str] = Field(default_factory=list)
+    sli_slo_targets: list[str] = Field(default_factory=list)
+
+
 class DesignOutputPayload(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -67,6 +133,14 @@ class DesignOutputPayload(BaseModel):
         default=None,
         description="Rough estimation of monthly cloud cost on AWS/GCP based on traffic and scale requirements."
     )
+    runtime_topology: RuntimeTopologySection = Field(default_factory=RuntimeTopologySection)
+    data_flows: DataFlowSection = Field(default_factory=DataFlowSection)
+    websocket_architecture: WebsocketArchitectureSection = Field(default_factory=WebsocketArchitectureSection)
+    ai_architecture: AIArchitectureSection = Field(default_factory=AIArchitectureSection)
+    security_architecture: SecurityArchitectureSection = Field(default_factory=SecurityArchitectureSection)
+    video_streaming_architecture: VideoStreamingArchitectureSection = Field(default_factory=VideoStreamingArchitectureSection)
+    database_architecture: DatabaseArchitectureSection = Field(default_factory=DatabaseArchitectureSection)
+    observability_architecture: ObservabilityArchitectureSection = Field(default_factory=ObservabilityArchitectureSection)
     suggested_mermaid_diagram: str
     final_recommendation: str
     assumptions: list[str] = Field(default_factory=list)

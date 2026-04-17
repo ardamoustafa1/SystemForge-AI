@@ -1,163 +1,184 @@
 # SystemForge AI
 
-SystemForge AI is a full-stack AI engineering workspace that turns product requirements into structured, production-oriented system design artifacts.
+SystemForge AI, ürün gereksinimlerini üretime hazır sistem tasarımı çıktılarina dönüstüren, full-stack bir AI Engineering Workspace platformudur.
 
-It is deliberately built as an artifact-first platform rather than a generic chatbot. The core experience is centered on generating, reviewing, versioning, securing, and exporting architecture documents that engineering teams can actually use.
+Platform, klasik "chatbot" deneyiminden farkli olarak **artifact-first** yaklasimla tasarlanmistir: üretim; inceleme; versiyonlama; güvenlik; export ve ekip içi teslim akisi tek bir yerde birlesir.
 
 Repository: [github.com/ardamoustafa1/SystemForge-AI](https://github.com/ardamoustafa1/SystemForge-AI)
 
-## Why This Project Exists
+English version: [README.en.md](README.en.md)
 
-Teams often start architecture work in scattered docs, Slack threads, whiteboards, or AI chats that are hard to review and impossible to operationalize. SystemForge AI closes that gap by producing structured outputs with explicit trade-offs, diagrams, implementation checklists, and export flows.
+![CI](https://github.com/ardamoustafa1/SystemForge-AI/actions/workflows/ci.yml/badge.svg)
+![Platform](https://img.shields.io/badge/platform-web%20%7C%20api-0a0a0a)
+![Backend](https://img.shields.io/badge/backend-FastAPI-05998b)
+![Frontend](https://img.shields.io/badge/frontend-Next.js%2015-111111)
+![Database](https://img.shields.io/badge/database-PostgreSQL%2016-336791)
+![Cache](https://img.shields.io/badge/cache-Redis%207-dc382d)
 
-The result is a workflow that is closer to an engineering design review system than a prompt playground.
+## Icerik
 
-## Core Value
+- [1. Projenin Amaci](#1-projenin-amaci)
+- [2. One Cikan Yetenekler](#2-one-cikan-yetenekler)
+- [3. Mimari Genel Bakis](#3-mimari-genel-bakis)
+- [4. Teknik Mimari Detaylari](#4-teknik-mimari-detaylari)
+- [5. Modul ve Klasor Yapisi](#5-modul-ve-klasor-yapisi)
+- [6. API Yuzeyi](#6-api-yuzeyi)
+- [7. Kurulum ve Calistirma](#7-kurulum-ve-calistirma)
+- [8. Konfigurasyon ve Ortam Degiskenleri](#8-konfigurasyon-ve-ortam-degiskenleri)
+- [9. Veritabani ve Migration](#9-veritabani-ve-migration)
+- [10. Test ve Kalite Guvenceleri](#10-test-ve-kalite-guvenceleri)
+- [11. Guvenlik Modeli](#11-guvenlik-modeli)
+- [12. Dokumantasyon Haritasi](#12-dokumantasyon-haritasi)
+- [13. Complete Tech Matrix](#13-complete-tech-matrix)
+- [14. Docker Services Manifest](#14-docker-services-manifest)
+- [15. Full Environment Variables Reference](#15-full-environment-variables-reference)
+- [16. Operasyonel Quick Runbook](#16-operasyonel-quick-runbook)
+- [17. Production Hardening Checklist](#17-production-hardening-checklist)
+- [18. Contributing Rehberi](#18-contributing-rehberi)
+- [19. ADR Index](#19-adr-index)
+- [20. Changelog Politikasi](#20-changelog-politikasi)
+- [21. Yol Haritasi ve Kisitlar](#21-yol-haritasi-ve-kisitlar)
+- [22. Lisans](#22-lisans)
 
-- Transform raw product/backend requirements into consistent architecture artifacts
-- Generate structured outputs instead of free-form chat responses
-- Support review workflows with comments, review status, version history, and timelines
-- Make architecture portable through Markdown, PDF, scaffold ZIP, Terraform ZIP, and task CSV exports
-- Add workspace-aware ownership, role-based access, and operational/security visibility
+## 1. Projenin Amaci
 
-## What You Get
+Mühendislik ekipleri mimari tasarim sürecinde genelde daginik araclar kullanir: Notion, Slack, whiteboard, LLM chat pencereleri. Bu daginiklik kararlarin izlenmesini, review sürecini ve uygulanabilir teslimati zorlastirir.
 
-### Product Capabilities
+SystemForge AI bu boslugu su sekilde kapatir:
 
-- AI-generated system design documents with strict schema validation
-- Executive summary, requirements, architecture notes, trade-off decisions, and engineering checklist
-- Mermaid diagram generation and in-app diagram editing/sync
-- Cost estimation plus scenario-based cost analysis and calibration hooks
-- Design review workflow with comments and approval states
-- Shareable read-only public links for design artifacts
-- Async export jobs and job-center style tracking
-- Workspace management with budgets, roles, and member administration
-- Security operations panels for abuse analytics, anomaly summaries, audit trail, and active sessions
+- Ham gereksinimleri standart bir design brief modeline dönüstürür.
+- LLM üretimini katı schema sözlesmesi ile dogrular.
+- Ekip review, yorum, sürüm kiyaslama ve karar tarihcesi sunar.
+- Ciktilari Markdown, PDF, ZIP ve CSV olarak disa aktarir.
+- Workspace-bazli yetkilendirme ve operasyon görünürlügü saglar.
 
-### Engineering Capabilities
+## 2. One Cikan Yetenekler
 
-- Schema-first generation pipeline with safe fallback behavior
-- FastAPI backend with modular services and strict Pydantic contracts
-- Next.js App Router frontend with typed client-side API usage
-- Realtime infrastructure over WebSocket + Redis Streams
-- Background workers for generation, export, outbox relay, delivery, and notifications
-- CI coverage for backend tests, frontend build/E2E, audits, and backend static checks
+### Ürün Yetenekleri
 
-## Tech Stack
+- AI destekli sistem tasarimi üretimi (schema-first)
+- Executive summary, functional/non-functional requirements, architecture notes, trade-off ve implementation checklist üretimi
+- Mermaid diyagram üretimi, düzenleme ve senkronizasyon
+- Cost estimation ve scenario-based cost analysis
+- Review durumlari: `draft`, `in_review`, `approved`, `changes_requested`
+- Yorumlar, timeline ve sürüm karsilastirma
+- Public read-only share linkleri
+- Asenkron export job merkezi (status + download)
+- Workspace, üyelik, rol ve bütce yönetimi
 
-### Frontend
+### Mühendislik Yetenekleri
 
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-- SWR
-- React Hook Form + Zod
-- Mermaid
-- Playwright + Vitest
+- FastAPI + SQLAlchemy + Pydantic ile sözlesme-temelli backend
+- Next.js App Router + TypeScript + SWR tabanli frontend
+- Redis Streams + WebSocket ile realtime dagitim
+- Generation, export, outbox, delivery, notification worker topolojisi
+- Docker Compose ile yerel tam stack orkestrasyonu
+- CI boru hatti (backend checks/tests, frontend type/build/E2E, audit)
 
-### Backend
+## 3. Mimari Genel Bakis
 
-- FastAPI
-- SQLAlchemy 2
-- Pydantic 2
-- PostgreSQL
-- Redis
-- Alembic
-- Pytest
-- Sentry SDK
+Asagidaki akis, paylastigin mimari stile uygun sekilde uçtan uca veri akisini gösterir:
 
-### Infrastructure and Local Tooling
+```mermaid
+flowchart LR
+    C1[Client: Web / Mobile / API Bot] --> R1[Risk Router]
+    C2[Partner Gateway] --> R1
+    C3[Optional API Gateway] --> R1
 
-- Docker Compose
-- Multi-service worker topology
-- GitHub Actions CI
+    R1 --> S1[Security Layer<br/>Validation + CSRF + Error Handling]
+    S1 --> O1[Hybrid Orchestrator<br/>Prompt + Policy + Fallback]
 
-## System Overview
+    O1 --> D1[Role Detector<br/>TC / Phone / Email / Card / IBAN / User Address]
+    O1 --> D2[PII Name Detector]
+    O1 --> D3[AI Risk Service<br/>BERT / Heuristics]
 
-```text
-User -> Next.js frontend -> FastAPI API -> PostgreSQL
-                             |            -> Redis Streams / Redis cache
-                             |
-                             -> Generation worker
-                             -> Export worker
-                             -> Outbox relay worker
-                             -> Delivery worker
-                             -> Notification worker
+    D1 --> E1[Entity Pool]
+    D2 --> E1
+    D3 --> E1
+
+    E1 --> F1[Confidence Filter]
+    F1 --> M1[Masking Resolver]
+    M1 --> M2[Masking Engine<br/>Placeholder Replacement]
+    M2 --> O2[Sanitized Output + Audit]
 ```
 
-### Main Application Areas
+### Kisa Akis Özeti
 
-- `frontend/`: product UI, dashboard, auth flows, review UI, settings, workspace experience
-- `backend/app/api/routes/`: REST API surface
-- `backend/app/services/`: business logic for generation, export, authz, jobs, security, and workspaces
-- `backend/app/workers/`: background workers and stream consumers
-- `backend/alembic/`: database migrations
-- `docs/`: ADRs, security docs, API governance, benchmark/load-test material
+1. Istek frontend veya harici client üzerinden API katmanina gelir.
+2. Güvenlik katmani auth, CSRF, validasyon ve rate limit kontrollerini uygular.
+3. Orkestrasyon katmani prompt olusturur, policy/fallback kurallarini uygular.
+4. LLM üretimi schema ile dogrulanir ve güvenli ciktiya finalize edilir.
+5. Design artefact veritabanina kaydedilir; outbox/event akisi tetiklenir.
+6. Realtime dagitim ve notification worker'lari istemcileri günceller.
+7. Kullanici design review, versiyonlama ve export akislarini yürütür.
 
-## Key Features
+## 4. Teknik Mimari Detaylari
 
-### 1. AI Design Generation
+### Uygulama Katmanlari
 
-The user submits a structured design brief. The backend converts that brief into a strict prompt and expects a JSON response that must satisfy `DesignOutputPayload`. If the model fails or returns malformed output, the system can fall back to schema-valid safe output for local/test use.
+- **Frontend (`frontend/`)**: Dashboard, design editor, review panel, settings, auth ve i18n.
+- **API (`backend/app/api/routes/`)**: REST kontratlari ve endpoint katmani.
+- **Domain Services (`backend/app/services/`)**: Design generation, export, authz, security, job orchestration.
+- **LLM Pipeline (`backend/app/llm/`)**: Prompt builder, parser, fallback, output finalize, mermaid sanitize.
+- **Realtime (`backend/app/realtime/`)**: WebSocket gateway ve connection manager.
+- **Workers (`backend/app/workers/`)**: Generation/export/outbox/delivery/notification consumerlari.
 
-Generated outputs include:
+### Veri ve Mesajlasma Katmani
 
-- executive summary
-- functional and non-functional requirements
-- high-level architecture
-- architecture decisions
-- trade-offs
-- scorecard
-- cost considerations
-- recommended implementation phases
-- engineering checklist
-- Mermaid diagram
+- **PostgreSQL**: Kalici domain verisi, design artefactlar, review/comment/sürüm kayitlari.
+- **Redis**: Cache ve stream tabanli event dagitimi.
+- **Redis Streams**:
+  - `sf:rt:v1:stream:delivery`
+  - `sf:rt:v1:stream:realtime:{user_id}`
+  - `sf:rt:v1:stream:notify`
+  - `sf:rt:v1:stream:notify:delayed`
 
-### 2. Architecture Review Workflow
+### Worker Sorumluluklari
 
-Each design can move through review states and capture team feedback.
+- `backend-generation-worker`: Asenkron design generation islerini yürütür.
+- `backend-export-worker`: PDF/Markdown vb. export islerini üretir.
+- `backend-outbox-worker`: DB outbox kayitlarini stream'e publish eder.
+- `backend-delivery-worker`: Eventleri aktif kullanicilara dagitir.
+- `backend-notification-worker`: Gecikmeli/offline bildirim dagitimini yönetir.
 
-- review status: `draft`, `in_review`, `approved`, `changes_requested`
-- comment threads on a design
-- decision timeline
-- version comparison and explain-diff flow
-- notes editing and architecture diagram sync
+## 5. Modul ve Klasor Yapisi
 
-### 3. Workspace-First Collaboration
+```text
+systemforge-ai/
+├─ .github/workflows/         # CI workflows
+├─ backend/
+│  ├─ alembic/                # Migration dosyalari
+│  ├─ app/
+│  │  ├─ api/routes/          # Endpoint tanimlari
+│  │  ├─ auth/                # Auth service + dependency
+│  │  ├─ core/                # Config, security, errors, rate limiter
+│  │  ├─ db/                  # Session/base setup
+│  │  ├─ llm/                 # Prompt, parser, fallback, finalize
+│  │  ├─ messaging/           # Outbox/realtime messaging modelleri
+│  │  ├─ models/              # SQLAlchemy modelleri
+│  │  ├─ realtime/            # WebSocket gateway
+│  │  ├─ schemas/             # Pydantic kontratlari
+│  │  ├─ services/            # Domain servisleri
+│  │  └─ workers/             # Background workers
+│  ├─ requirements.txt
+│  └─ Dockerfile
+├─ frontend/
+│  ├─ app/                    # Next.js App Router sayfalari
+│  ├─ components/             # UI bilesenleri
+│  ├─ features/               # Özellik bazli istemci mantigi
+│  ├─ i18n/                   # Cok dil altyapisi
+│  ├─ lib/                    # API/WS client, util, env
+│  ├─ types/                  # Frontend tipleri
+│  └─ Dockerfile
+├─ docs/                      # Mimari, güvenlik, governance belgeleri
+├─ ops/                       # Alarm/rubook/dashboard varliklari
+├─ SECURITY.md
+├─ Makefile
+├─ docker-compose.yml
+└─ README.md
+```
 
-Workspaces are first-class and shape authorization behavior across the product.
-
-- list/create/update/delete workspaces
-- set default workspace
-- invite/remove members
-- role management: `admin`, `editor`, `viewer`
-- workspace token budget and alert threshold controls
-
-### 4. Export and Delivery
-
-Generated artifacts are not trapped in the UI.
-
-- Markdown export
-- PDF export
-- scaffold ZIP export
-- Terraform ZIP export
-- engineering checklist CSV export for Jira/Linear-style workflows
-- async export jobs with status and download endpoints
-
-### 5. Security and Operational Visibility
-
-The application includes security-aware product and platform behaviors.
-
-- cookie-based auth with CSRF protection for mutating requests
-- workspace-aware authorization checks
-- abuse analytics summary
-- anomaly summary
-- audit trail endpoints
-- refresh-token session visibility and revocation
-- security response headers and API deprecation/version headers
-
-## API Surface
+## 6. API Yuzeyi
 
 ### Auth
 
@@ -186,7 +207,7 @@ The application includes security-aware product and platform behaviors.
 - `GET /api/designs/{id}/cost-calibration`
 - `POST /api/designs/{id}/cost-analysis`
 
-### Design Versions and Sharing
+### Versions and Public Share
 
 - `GET /api/designs/{id}/versions`
 - `GET /api/designs/{id}/versions/{version_id}`
@@ -222,7 +243,7 @@ The application includes security-aware product and platform behaviors.
 - `PATCH /api/workspaces/{workspace_id}/members/{member_id}`
 - `DELETE /api/workspaces/{workspace_id}/members/{member_id}`
 
-### Dashboard, Security, Health, Advanced
+### Ops, Security, Health, Realtime
 
 - `GET /api/dashboard/ops-summary`
 - `GET /api/security/abuse-summary`
@@ -233,105 +254,24 @@ The application includes security-aware product and platform behaviors.
 - `GET /api/health/api-versions`
 - `GET /api/ws`
 
-## Realtime Architecture
+## 7. Kurulum ve Calistirma
 
-SystemForge AI includes a Redis Streams-based realtime layer for messaging and fanout.
-
-### Important Streams
-
-- `sf:rt:v1:stream:delivery`
-- `sf:rt:v1:stream:realtime:{user_id}`
-- `sf:rt:v1:stream:notify`
-- `sf:rt:v1:stream:notify:delayed`
-
-### Worker Responsibilities
-
-- `backend-outbox-worker`: publishes DB outbox events into Redis Streams
-- `backend-delivery-worker`: routes realtime events to active users or notification queues
-- `backend-notification-worker`: handles push notification delivery/retries
-- `backend-generation-worker`: processes async design generation jobs
-- `backend-export-worker`: processes async export jobs
-
-### Realtime Flow
-
-1. Client opens WebSocket connection at `GET /api/ws`.
-2. Client sends `session.hello`.
-3. Gateway validates/authenticates and returns `session.welcome`.
-4. Client sends messages/events.
-5. Backend persists durable state and writes outbox records.
-6. Relay and delivery workers fan out events through Redis Streams.
-7. Notification worker handles offline delivery scenarios.
-
-## Repository Structure
-
-```text
-systemforge-ai/
-├─ .github/workflows/         # CI pipelines
-├─ backend/
-│  ├─ alembic/                # DB migrations
-│  ├─ app/
-│  │  ├─ api/routes/          # REST endpoints
-│  │  ├─ auth/                # auth dependencies and services
-│  │  ├─ core/                # config, security, metrics, infra glue
-│  │  ├─ db/                  # DB session/base setup
-│  │  ├─ llm/                 # prompts, fallback, output processing
-│  │  ├─ models/              # SQLAlchemy models
-│  │  ├─ notifications/       # provider integration
-│  │  ├─ realtime/            # websocket gateway
-│  │  ├─ schemas/             # Pydantic contracts
-│  │  ├─ services/            # business logic
-│  │  └─ workers/             # background workers
-│  ├─ requirements.txt
-│  └─ Dockerfile
-├─ docs/                      # ADRs, security, governance, reports
-├─ frontend/
-│  ├─ app/                    # Next.js app router pages
-│  ├─ components/             # reusable UI components
-│  ├─ features/               # feature-level client logic
-│  ├─ lib/                    # API client, context, helpers
-│  ├─ types/                  # frontend types
-│  ├─ package.json
-│  └─ Dockerfile
-├─ SECURITY.md
-├─ Makefile
-├─ docker-compose.yml
-└─ README.md
-```
-
-## Quick Start
-
-### Option A: Docker Compose
-
-1. Copy the root environment file:
+### A) Docker Compose ile hizli baslangic (önerilen)
 
 ```bash
 cp .env.example .env
-```
-
-2. Start the full stack:
-
-```bash
 docker compose up --build
 ```
 
-3. Open the app:
+Ardindan:
 
 - Frontend: [http://localhost:3000](http://localhost:3000)
-- Backend docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Health endpoint: [http://localhost:8000/api/health](http://localhost:8000/api/health)
+- Backend Swagger: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health: [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
-### Useful Make Targets
+### B) Docker olmadan lokal gelistirme
 
-```bash
-make up
-make down
-make rebuild
-make logs
-```
-
-## Local Development Without Docker
-
-### Backend
+Backend:
 
 ```bash
 cd backend
@@ -343,7 +283,7 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-### Frontend
+Frontend:
 
 ```bash
 cd frontend
@@ -352,16 +292,23 @@ cp .env.example .env.local
 npm run dev
 ```
 
-### Required Local Services
+Gerekli lokal servisler:
 
 - PostgreSQL
 - Redis
 
-## Environment Variables
+### Yararlı Make komutlari
 
-### Root `.env.example`
+```bash
+make up
+make down
+make rebuild
+make logs
+```
 
-These values are used by `docker-compose.yml`.
+## 8. Konfigurasyon ve Ortam Degiskenleri
+
+`docker-compose.yml` ve runtime için temel degiskenler:
 
 - `POSTGRES_DB`
 - `POSTGRES_USER`
@@ -376,50 +323,50 @@ These values are used by `docker-compose.yml`.
 - `FRONTEND_NEXT_PUBLIC_API_URL`
 - `FRONTEND_NEXT_PUBLIC_APP_NAME`
 
-### Important Runtime Notes
+Önemli notlar:
 
-- `OPENAI_BASE_URL` / `BACKEND_OPENAI_BASE_URL` can be used with OpenAI-compatible providers
-- production should use a strong `JWT_SECRET`
-- `AUTO_CREATE_TABLES` should remain `false` outside local dev/test
-- `PUBLIC_APP_URL` should point to the frontend origin for public share links
+- `BACKEND_OPENAI_BASE_URL` OpenAI uyumlu saglayicilar için kullanilabilir.
+- Production ortaminda güçlü bir `JWT_SECRET` zorunludur.
+- `AUTO_CREATE_TABLES`, production/distributed ortamlarda `false` olmalidir.
+- Public share linkleri için frontend origin degeri dogru set edilmelidir.
 
-## Database and Migrations
+## 9. Veritabani ve Migration
 
-Use Alembic for schema changes.
+Alembic migration komutu:
 
 ```bash
 cd backend
 alembic upgrade head
 ```
 
-Docker-safe helper:
+Docker ile migration:
 
 ```bash
 docker compose run --rm backend sh -lc "/app/scripts/migrate.sh"
 ```
 
-Important behavior:
+Davranis notlari:
 
-- the backend hard-fails in non-dev environments if insecure security settings are detected
-- Compose includes a `backend-migrate` one-shot service
-- backend and workers depend on migration completion before starting
+- Güvensiz security ayarlari tespit edilirse backend non-dev ortamlarda fail-fast davranir.
+- Compose yapisinda `backend-migrate` one-shot servisi bulunur.
+- Backend/worker servisleri migration tamamlanmadan ayaga kalkmaz.
 
-## Testing and Quality Gates
+## 10. Test ve Kalite Guvenceleri
 
-### Backend
+Backend test:
 
 ```bash
 docker compose run --rm backend-test
 ```
 
-Or locally:
+veya:
 
 ```bash
 cd backend
 pytest tests -q
 ```
 
-### Frontend
+Frontend kalite adimlari:
 
 ```bash
 cd frontend
@@ -428,33 +375,31 @@ npm run test
 npm run test:e2e
 ```
 
-### CI
+CI pipeline kapsaminda:
 
-GitHub Actions currently runs:
+- Backend static checks (`ruff`, `pyre`)
+- Backend testleri (Docker)
+- Frontend type/build/E2E
+- Dependency audit adimlari
 
-- backend static checks (`ruff`, `pyre`)
-- backend tests in Docker
-- frontend type/build/E2E flow
-- dependency audits
+## 11. Guvenlik Modeli
 
-## Security Model
+SystemForge AI, güvenligi uygulama seviyesinde varsayilan olarak ele alir:
 
-SystemForge AI includes several baseline security measures:
+- HTTP-only cookie tabanli session auth
+- Mutating endpointlerde CSRF korumasi
+- Workspace-aware authorization kontrolleri
+- Export ve design erisimlerinde ownership dogrulamasi
+- Request boyutu ve girdi kontrati kontrolleri
+- Session görünürlügü ve revocation endpointleri
+- Public share tokenlari ile read-only erisim modeli
+- Security response header ve API version/deprecation headerlari
 
-- HTTP-only cookie auth for browser sessions
-- CSRF protection on mutating endpoints
-- security response headers
-- request-size enforcement for generation payloads
-- workspace-aware authorization checks
-- ownership checks on export jobs and design access
-- session revocation APIs
-- public share links with read-only token-based access
+Detaylar: [SECURITY.md](SECURITY.md)
 
-See also: [SECURITY.md](SECURITY.md)
+## 12. Dokumantasyon Haritasi
 
-## Documentation
-
-Architecture, governance, and security docs live under `docs/`.
+`docs/` altindaki önemli belgeler:
 
 - [Case Study](docs/CASE_STUDY.md)
 - [ADR-001 Workspace-First Authz](docs/ADR-001-workspace-first-authz.md)
@@ -469,19 +414,375 @@ Architecture, governance, and security docs live under `docs/`.
 - [Secrets Rotation & Break-Glass](docs/SECRETS_ROTATION_BREAK_GLASS.md)
 - [WebSocket Fanout Simplification](docs/WEBSOCKET_FANOUT_SIMPLIFICATION.md)
 
-## Current Scope and Limitations
+## 13. Complete Tech Matrix
 
-- Playwright coverage is intentionally a smoke suite, not a full regression matrix
-- some advanced operational wiring is environment-dependent
-- WebSocket fanout can still be simplified for very high-concurrency deployments
-- this repository is optimized for local/full-stack engineering showcase and product iteration
+Bu bölüm repository dosyalarina göre (özellikle `frontend/package.json`, `backend/requirements.txt`, `docker-compose.yml`) teknolojilerin tam envanterini özetler.
 
-## Portfolio Positioning
+### Frontend Runtime
 
-This project supports a statement like:
+- `next` (Next.js 15)
+- `react` / `react-dom` (React 19)
+- `typescript`
+- `tailwindcss`, `postcss`, `autoprefixer`, `tailwindcss-animate`
+- `swr`
+- `react-hook-form`, `@hookform/resolvers`, `zod`
+- `mermaid`
+- `@xyflow/react` (node/edge tabanli diyagram akislari)
+- `framer-motion`
+- `lucide-react`
+- `class-variance-authority`, `clsx`, `tailwind-merge`
+- `@radix-ui/react-slot`
 
-> Built an AI-powered engineering workspace that transforms product requirements into production-grade architecture artifacts with review workflows, exports, workspace-based authorization, realtime infrastructure, and full-stack operational tooling using FastAPI, Next.js, PostgreSQL, Redis, and LLM pipelines.
+### Frontend Testing and Tooling
 
-## License
+- `vitest`
+- `@playwright/test`
+- `jsdom`
+- `@types/node`, `@types/react`
 
-No license file is currently included in the repository. Add one if you want to make usage terms explicit.
+### Backend Runtime
+
+- `fastapi`
+- `uvicorn[standard]`
+- `sqlalchemy`
+- `psycopg[binary]`
+- `pydantic`, `pydantic-settings`
+- `redis`
+- `httpx`
+- `alembic`
+- `fpdf2` (PDF export)
+- `sentry-sdk[fastapi]`
+- `python-jose` (JWT)
+- `passlib[bcrypt]`, `bcrypt` (password hashing)
+- `python-multipart`
+- `email-validator`
+
+### Backend Testing
+
+- `pytest`
+- `pytest-asyncio`
+
+### Data, Infra and Delivery
+
+- PostgreSQL 16
+- Redis 7
+- Docker + Docker Compose
+- Multi-worker background processing (generation/export/outbox/delivery/notification)
+- GitHub Actions CI pipelines (`.github/workflows/ci.yml`)
+
+## 14. Docker Services Manifest
+
+`docker-compose.yml` icindeki servis topolojisi:
+
+- `postgres`: kalici veritabani servisi (`postgres:16`)
+- `redis`: cache + stream altyapisi (`redis:7`)
+- `backend`: FastAPI ana API servisi
+- `backend-migrate`: one-shot migration servisi (`/app/scripts/migrate.sh`)
+- `backend-generation-worker`: async generation consumer
+- `backend-export-worker`: async export consumer
+- `backend-outbox-worker`: DB outbox -> stream relay
+- `backend-delivery-worker`: stream -> user fanout/delivery
+- `backend-notification-worker`: delayed/offline notification retries
+- `backend-test`: backend test imaji/servisi
+- `frontend`: Next.js UI servisi
+
+Servis davranis notlari:
+
+- `backend` ve tum worker servisleri `backend-migrate` basarili tamamlanmadan ayaga kalkmaz.
+- Worker servislerinde healthcheck (worker tipine göre) tanimlidir.
+- `frontend`, `backend` health check "healthy" olmadan baslamaz.
+
+## 15. Full Environment Variables Reference
+
+Bu bölümde tum degiskenler iki seviyede listelenmistir:
+- **Runtime vars**: uygulamanin dogrudan okudugu degiskenler (`backend/app/core/config.py`, `frontend/lib/env.ts`)
+- **Compose bridge vars**: `.env` tarafinda tanimlanip container runtime varlarina map edilen degiskenler (`docker-compose.yml`)
+
+### 15.1 Backend Runtime Variables (`backend/app/core/config.py`)
+
+#### App/API
+- `APP_NAME` (default: `SystemForge AI API`)
+- `APP_ENV` (default: `development`)
+- `API_PREFIX` (default: `/api`)
+- `API_VERSION` (default: `v1`)
+- `API_DEPRECATION_POLICY_URL` (default: `https://semver.org/`)
+- `API_DEPRECATED_AFTER` (default: empty)
+- `API_SUNSET_AT` (default: empty)
+- `CORS_ORIGINS` (default: `http://localhost:3000`)
+- `PUBLIC_APP_URL` (default: `http://localhost:3000`)
+
+#### Mermaid/PDF Rendering
+- `MERMAID_PDF_RENDER_ENABLED` (default: `true`)
+- `KROKI_URL` (default: `https://kroki.io`)
+- `KROKI_TIMEOUT_SECONDS` (default: `20.0`)
+
+#### Data Stores
+- `DATABASE_URL` (default local postgres URL)
+- `REDIS_URL` (default: `redis://localhost:6379/0`)
+
+#### Auth/Cookie/JWT
+- `JWT_SECRET` (default: `change-me`, productionda degistirilmeli)
+- `JWT_ALGORITHM` (default: `HS256`)
+- `JWT_EXP_MINUTES` (default: `720`)
+- `REFRESH_EXP_DAYS` (default: `14`)
+- `AUTH_COOKIE_NAME` (default: `sf_access_token`)
+- `REFRESH_COOKIE_NAME` (default: `sf_refresh_token`)
+- `CSRF_COOKIE_NAME` (default: `sf_csrf_token`)
+- `COOKIE_SECURE` (default: `false`)
+- `COOKIE_SAMESITE` (default: `lax`)
+
+#### LLM and Generation
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL` (default: `gpt-4.1-mini`)
+- `OPENAI_BASE_URL` (default: `https://api.openai.com/v1`)
+- `GENERATION_TIMEOUT_SECONDS` (default: `90`)
+- `MAX_GENERATION_PAYLOAD_BYTES` (default: `65536`)
+
+#### Rate Limit / Observability
+- `RATE_LIMIT_PER_MINUTE` (default: `30`)
+- `SENTRY_DSN`
+- `AUTO_CREATE_TABLES` (default: `false`; prod ortamda `false` kalmali)
+
+#### Outbox Relay
+- `OUTBOX_RELAY_BATCH_SIZE` (default: `200`)
+- `OUTBOX_RELAY_POLL_MS` (default: `500`)
+- `OUTBOX_RELAY_PROCESSING_TIMEOUT_SECONDS` (default: `60`)
+- `OUTBOX_RELAY_MAX_BACKOFF_SECONDS` (default: `300`)
+- `OUTBOX_STREAM_PREFIX` (default: `sf:rt:v1:stream`)
+
+#### Delivery Worker
+- `DELIVERY_CONSUMER_GROUP` (default: `delivery-workers`)
+- `DELIVERY_CONSUMER_NAME` (default: `delivery-worker-1`)
+- `DELIVERY_POLL_BLOCK_MS` (default: `2000`)
+- `DELIVERY_BATCH_SIZE` (default: `100`)
+- `DELIVERY_PENDING_IDLE_MS` (default: `30000`)
+- `DELIVERY_RECIPIENT_DEDUPE_TTL_SECONDS` (default: `86400`)
+
+#### Notification Worker
+- `NOTIFICATION_CONSUMER_GROUP` (default: `notification-workers`)
+- `NOTIFICATION_CONSUMER_NAME` (default: `notification-worker-1`)
+- `NOTIFICATION_POLL_BLOCK_MS` (default: `2000`)
+- `NOTIFICATION_BATCH_SIZE` (default: `100`)
+- `NOTIFICATION_MAX_ATTEMPTS` (default: `5`)
+- `NOTIFICATION_RETRY_BASE_SECONDS` (default: `2`)
+- `NOTIFICATION_ALLOW_MOCK_TOKENS` (default: `false`)
+- `NOTIFICATION_PROVIDER_MODE` (default: `mock`)
+- `NOTIFICATION_PROVIDER_TIMEOUT_SECONDS` (default: `5`)
+- `NOTIFICATION_FCM_WEBHOOK_URL`
+- `NOTIFICATION_APNS_WEBHOOK_URL`
+- `NOTIFICATION_PENDING_IDLE_MS` (default: `30000`)
+
+#### Generation Worker
+- `GENERATION_CONSUMER_GROUP` (default: `generation-workers`)
+- `GENERATION_CONSUMER_NAME` (default: `generation-worker-1`)
+- `GENERATION_POLL_BLOCK_MS` (default: `2000`)
+- `GENERATION_BATCH_SIZE` (default: `10`)
+
+#### Export Worker
+- `EXPORT_CONSUMER_GROUP` (default: `export-workers`)
+- `EXPORT_CONSUMER_NAME` (default: `export-worker-1`)
+- `EXPORT_POLL_BLOCK_MS` (default: `2000`)
+- `EXPORT_BATCH_SIZE` (default: `20`)
+
+#### Stream Control and Abuse Policy
+- `STREAM_MAXLEN_APPROX` (default: `200000`)
+- `PROMPT_ABUSE_POLICY_MODE` (default: `log-only`; options: `block | challenge | log-only`)
+- `PROMPT_ABUSE_SCORE_BLOCK_THRESHOLD` (default: `80`)
+- `PROMPT_ABUSE_SCORE_CHALLENGE_THRESHOLD` (default: `50`)
+
+### 15.2 Frontend Runtime Variables (`frontend/lib/env.ts`)
+
+- `NEXT_PUBLIC_API_URL` (default: `http://localhost:8000/api`)
+- `NEXT_PUBLIC_APP_NAME` (default: `SystemForge AI`)
+
+Not: WebSocket endpointi, `NEXT_PUBLIC_API_URL` degerinden otomatik türetilir (`/ws` suffix).
+
+### 15.3 Compose Bridge Variables (`docker-compose.yml`)
+
+Root `.env` ile compose tarafinda kullanilan map degiskenleri:
+
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `BACKEND_DATABASE_URL` -> container `DATABASE_URL`
+- `BACKEND_REDIS_URL` -> container `REDIS_URL`
+- `BACKEND_JWT_SECRET` -> container `JWT_SECRET`
+- `BACKEND_OPENAI_API_KEY` -> container `OPENAI_API_KEY`
+- `BACKEND_OPENAI_BASE_URL` -> container `OPENAI_BASE_URL`
+- `BACKEND_OPENAI_MODEL` -> container `OPENAI_MODEL`
+- `FRONTEND_NEXT_PUBLIC_API_URL` -> frontend `NEXT_PUBLIC_API_URL`
+- `PUBLIC_APP_URL` -> backend `PUBLIC_APP_URL`
+- `BACKEND_INTERNAL_URL_WS` (frontend container tarafinda internal ws bridge için)
+
+### 15.4 Example Env Files
+
+- `backend/.env.example` temel backend degiskenlerini içerir.
+- `frontend/.env.example` temel frontend degiskenlerini içerir.
+- Root `.env.example` compose odakli degisken setini içerir.
+
+## 16. Operasyonel Quick Runbook
+
+Bu bölüm "hizli müdahale" için en kritik komutlari tek yerde toplar.
+
+### 16.1 Servisleri ayaga kaldir / kapat
+
+```bash
+make up
+make down
+make logs
+```
+
+veya dogrudan:
+
+```bash
+docker compose up --build
+docker compose down
+docker compose logs -f
+```
+
+### 16.2 Sağlik kontrolleri
+
+- API health: `GET /api/health`
+- API ready: `GET /api/health/ready`
+- API docs: `http://localhost:8000/docs`
+- Frontend: `http://localhost:3000`
+
+Örnek CLI kontrolü:
+
+```bash
+curl -s http://localhost:8000/api/health
+curl -s http://localhost:8000/api/health/ready
+```
+
+### 16.3 Migration ve schema senkronizasyonu
+
+```bash
+docker compose run --rm backend sh -lc "/app/scripts/migrate.sh"
+```
+
+Lokal backend için:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+### 16.4 Worker dogrulama
+
+Compose calisirken su servislerin "up/healthy" oldugunu kontrol et:
+
+- `backend-generation-worker`
+- `backend-export-worker`
+- `backend-outbox-worker`
+- `backend-delivery-worker`
+- `backend-notification-worker`
+
+Hizli kontrol:
+
+```bash
+docker compose ps
+```
+
+### 16.5 Sik rastlanan sorunlar
+
+- **API acilmiyor**: `backend-migrate` servisini ve DB baglantisini kontrol et.
+- **Realtime event gelmiyor**: `redis`, `backend-outbox-worker`, `backend-delivery-worker` loglarini kontrol et.
+- **Export beklemede kaliyor**: `backend-export-worker` loglarini ve job endpointini kontrol et.
+- **Auth/cookie problemi**: `CORS_ORIGINS`, `PUBLIC_APP_URL`, cookie security ayarlarini ortama göre dogrula.
+
+## 17. Production Hardening Checklist
+
+Production ortama cikmadan önce minimum kontrol listesi:
+
+### 17.1 Secret ve kimlik bilgileri
+
+- [ ] `JWT_SECRET` güçlü ve rastgele üretilmis.
+- [ ] `OPENAI_API_KEY` secret manager üzerinden yönetiliyor.
+- [ ] Tüm secretlar repository dışında tutuluyor.
+- [ ] Düzenli secret rotation politikasi tanimli.
+
+### 17.2 Uygulama güvenligi
+
+- [ ] `AUTO_CREATE_TABLES=false`
+- [ ] `COOKIE_SECURE=true` (HTTPS zorunlu)
+- [ ] `COOKIE_SAMESITE` gereksinime göre (`lax` / `strict`)
+- [ ] CSRF korumasi aktif ve test edildi.
+- [ ] CORS sadece gerekli originlerle sinirlandirildi.
+
+### 17.3 Altyapi ve ag
+
+- [ ] PostgreSQL ve Redis public internete acik degil.
+- [ ] Reverse proxy/TLS katmani aktif.
+- [ ] Kaynak limitleri (CPU/memory) servis bazli tanimli.
+- [ ] Backups (DB snapshot + retention) aktif.
+
+### 17.4 Gözlemlenebilirlik
+
+- [ ] Sentry veya esdeger error tracking aktif (`SENTRY_DSN`).
+- [ ] Uygulama ve worker loglari merkezi bir yerde toplaniyor.
+- [ ] Kritik alarmlar tanimli (API down, worker fail, queue lag, DB errors).
+- [ ] `ops/` altindaki alert/runbook artefactlari ortama uygulanmis.
+
+### 17.5 Dagitim ve sürümleme
+
+- [ ] Migration adimi deployment pipeline'a dahil.
+- [ ] Rollback plani dokümante edildi.
+- [ ] CI kapilari (tests/build/checks) zorunlu.
+- [ ] API versiyonlama/deprecation headerlari dogrulandi.
+
+### 17.6 Performans ve dayanıklılık
+
+- [ ] Rate limit degerleri trafik profiline göre kalibre edildi.
+- [ ] Worker batch/poll degerleri yük testleriyle ayarlandi.
+- [ ] Redis stream maxlen ve consumer group davranisi gözlemlendi.
+- [ ] Yük test raporlarina göre kapasite planlamasi yapildi.
+
+## 18. Contributing Rehberi
+
+Katki süreçleri için:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Kisa prensipler:
+
+- Kücük ve odakli PR ac.
+- Kod degisikligiyle birlikte ilgili test/quality adimlarini calistir.
+- API kontrati veya migration degisikligi varsa PR aciklamasinda mutlaka belirt.
+- Güvenlik hassasiyetlerinde `SECURITY.md` ve `docs/THREAT_MODEL.md` referanslarini takip et.
+
+## 19. ADR Index
+
+Architecture Decision Records:
+
+- [ADR-001 Workspace-First Authz](docs/ADR-001-workspace-first-authz.md)
+
+Not: Yeni önemli mimari kararlarda `docs/ADR-XXX-*.md` formatinda yeni ADR eklenmesi önerilir.
+
+## 20. Changelog Politikasi
+
+Degisiklik geçmisi için:
+
+- [CHANGELOG.md](CHANGELOG.md)
+
+Kategoriler:
+
+- `Added`: yeni özellikler
+- `Changed`: mevcut davranis güncellemeleri
+- `Fixed`: hata düzeltmeleri
+- `Security`: güvenlik düzeltmeleri
+
+Versiyonlama yaklaşimi:
+
+- Semantic Versioning (`MAJOR.MINOR.PATCH`) önerilir.
+- Her release için changelog girisi olusturulmalidir.
+
+## 21. Yol Haritasi ve Kisitlar
+
+- E2E kapsami su an smoke seviyesinde; tam regresyon için genisletme planlanabilir.
+- Bazi operasyonel wiring adimlari ortama özel konfigürasyon gerektirir.
+- Yüksek concurrency senaryolarinda WebSocket fanout sadeleştirme firsatlari vardir.
+- Proje, ürünlestirme kadar engineering showcase ve iteratif ürün gelistirme hedefiyle de tasarlanmistir.
+
+## 22. Lisans
+
+Repository içinde su anda bir lisans dosyasi bulunmuyor. Açik kullanim kosullari için bir lisans dosyasi (`LICENSE`) eklenmesi önerilir.

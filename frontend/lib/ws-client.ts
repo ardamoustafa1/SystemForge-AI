@@ -13,7 +13,7 @@ import {
   wsErrorSchema,
   WsEnvelope,
 } from "@/lib/ws-contract";
-import { getEnv } from "@/lib/env";
+import { getWebSocketUrl } from "@/lib/env";
 
 type Handlers = {
   onConnected?: () => void;
@@ -52,10 +52,24 @@ export class WsClient {
   }
 
   static buildDefaultUrl() {
-    const isWindow = typeof window !== "undefined";
-    const proto = isWindow && window.location.protocol === "https:" ? "wss" : "ws";
-    const host = isWindow ? window.location.host : "localhost:3000";
-    return `${proto}://${host}/api/ws`;
+    const raw = getWebSocketUrl().replace(/\/$/, "");
+    let wsUrl = raw;
+
+    if (raw.startsWith("http://")) {
+      wsUrl = raw.replace(/^http:\/\//, "ws://");
+    } else if (raw.startsWith("https://")) {
+      wsUrl = raw.replace(/^https:\/\//, "wss://");
+    } else if (raw.startsWith("/")) {
+      if (typeof window !== "undefined") {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${protocol}//${window.location.host}${raw}`;
+      }
+    }
+
+    if (!wsUrl.endsWith("/ws")) {
+      wsUrl = `${wsUrl}/ws`;
+    }
+    return wsUrl;
   }
 
   connect(url: string, options: ConnectOptions = {}) {

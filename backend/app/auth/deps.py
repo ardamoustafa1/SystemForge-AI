@@ -74,18 +74,31 @@ def get_active_workspace_member(
     elif user.default_workspace_id is not None:
         workspace_id = int(user.default_workspace_id)
 
-    if workspace_id is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Active workspace is required")
+    member: WorkspaceMember | None = None
+    if workspace_id is not None:
+        member = db.scalar(
+            select(WorkspaceMember).where(
+                WorkspaceMember.workspace_id == workspace_id,
+                WorkspaceMember.user_id == user.id,
+            )
+        )
+        if member:
+            return member
 
     member = db.scalar(
-        select(WorkspaceMember).where(
-            WorkspaceMember.workspace_id == workspace_id,
-            WorkspaceMember.user_id == user.id,
-        )
+        select(WorkspaceMember)
+        .where(WorkspaceMember.user_id == user.id)
+        .order_by(WorkspaceMember.id.asc())
     )
-    if not member:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Workspace access denied")
-    return member
+    if member:
+        if user.default_workspace_id != member.workspace_id:
+            user.default_workspace_id = member.workspace_id
+            db.commit()
+        return member
+
+    if workspace_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Active workspace is required")
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Workspace access denied")
 
 
 def require_workspace_role(member: WorkspaceMember, *roles: RoleEnum) -> None:

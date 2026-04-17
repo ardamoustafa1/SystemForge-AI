@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/layout/page-header";
 import { createDesignSchema } from "@/features/designs/schemas";
 import { useI18n } from "@/i18n/i18n-context";
+import { useWorkspace } from "@/lib/workspace-context";
 
 type FormData = z.infer<typeof createDesignSchema>;
 
@@ -27,6 +28,7 @@ function FieldError({ message }: { message?: string }) {
 export default function NewDesignPage() {
   const router = useRouter();
   const { t, language } = useI18n();
+  const { activeWorkspace, loading: workspaceLoading, createWorkspace } = useWorkspace();
   const [error, setError] = useState("");
   const [wizardStep, setWizardStep] = useState(1);
   const form = useForm<FormData>({
@@ -120,6 +122,14 @@ export default function NewDesignPage() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError("");
+    if (workspaceLoading) {
+      setError("Workspace is still loading. Please wait a moment and try again.");
+      return;
+    }
+    if (!activeWorkspace) {
+      setError("Create or select a workspace before generating a design.");
+      return;
+    }
     try {
       const { scale_stance, ...input } = values;
       const response = await api<{ id: number; title: string }>("/designs", {
@@ -374,7 +384,34 @@ export default function NewDesignPage() {
 
           {error ? <p className="mt-4 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">{error}</p> : null}
 
-          <Button type="submit" className="mt-8 w-full h-12 bg-white text-black hover:bg-white/90 font-medium rounded-xl" disabled={form.formState.isSubmitting}>
+          {!workspaceLoading && !activeWorkspace ? (
+            <Card className="mt-4 border border-amber-500/30 bg-amber-500/[0.06] p-4 rounded-xl">
+              <p className="text-xs text-amber-200">
+                No active workspace is available yet. Create one to enable design generation.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3 border-amber-400/30 text-amber-100 hover:bg-amber-500/10"
+                onClick={async () => {
+                  try {
+                    await createWorkspace("My Workspace");
+                    setError("");
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Workspace could not be created");
+                  }
+                }}
+              >
+                Create Workspace
+              </Button>
+            </Card>
+          ) : null}
+
+          <Button
+            type="submit"
+            className="mt-8 w-full h-12 bg-white text-black hover:bg-white/90 font-medium rounded-xl"
+            disabled={form.formState.isSubmitting || workspaceLoading || !activeWorkspace}
+          >
             {form.formState.isSubmitting ? t("newDesign.generating") : t("newDesign.generate")}
           </Button>
         </Card>
