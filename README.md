@@ -43,11 +43,50 @@ English version: [README.en.md](README.en.md)
 
 ## Demo
 
-Bu bölüm GitHub ziyaretçisinin projeyi 10-15 saniyede anlamasi için hazirlandi.
+Bu bölüm GitHub ziyaretçisinin projeyi 10-15 saniyede anlamasi için hazirlandi. Asagida platformun farkli yeteneklerini anlatan 6 adet canli demo animasyonu (GIF) bulunmaktadir.
 
-### Product Demo (GIF)
+### Product Demos (GIFs)
 
-Demo GIF bölümü bu sürümde kaldirildi. Proje akisini hizli incelemek için asagidaki "Use Case" adimlarini takip edebilirsin.
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <b>1. Belge Yukleme & Çözümleme</b><br/>
+        <!-- GIF 1 YOLUNU BURAYA GIRIN -->
+        <img src="docs/assets/1.gif" alt="Belge Yukleme ve Çözümleme Demo" width="400"/>
+      </td>
+      <td align="center">
+        <b>2. Dinamik "Labor Illusion" Arayuzu</b><br/>
+        <!-- GIF 2 YOLUNU BURAYA GIRIN -->
+        <img src="docs/assets/2.gif" alt="Labor Illusion Arayuzu Demo" width="400"/>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <b>3. AI Mimari Uretimi (Real-time)</b><br/>
+        <!-- GIF 3 YOLUNU BURAYA GIRIN -->
+        <img src="docs/assets/3.gif" alt="AI Mimari Uretimi Demo" width="400"/>
+      </td>
+      <td align="center">
+        <b>4. Terraform IaC Disa Aktarim</b><br/>
+        <!-- GIF 4 YOLUNU BURAYA GIRIN -->
+        <img src="docs/assets/4.gif" alt="Terraform IaC Disa Aktarim Demo" width="400"/>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <b>5. Etkilesimli Mimari Kanvasi</b><br/>
+        <!-- GIF 5 YOLUNU BURAYA GIRIN -->
+        <img src="docs/assets/5.gif" alt="Etkilesimli Mimari Kanvasi Demo" width="400"/>
+      </td>
+      <td align="center">
+        <b>6. Workspace & RBAC Yonetimi</b><br/>
+        <!-- GIF 6 YOLUNU BURAYA GIRIN -->
+        <img src="docs/assets/6.gif" alt="Workspace & RBAC Yonetimi Demo" width="400"/>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ### Architecture (Highlighted)
 
