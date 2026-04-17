@@ -23,17 +23,32 @@ Turkish version: [README.md](README.md)
 
 ```mermaid
 flowchart LR
-    A[Client: Web/Mobile/API] --> B[FastAPI Layer]
-    B --> C[Auth + CSRF + Validation + Rate Limit]
-    C --> D[LLM Orchestration Pipeline]
-    D --> E[Schema Validation + Output Finalization]
-    E --> F[(PostgreSQL)]
-    E --> G[(Redis Streams)]
-    G --> H[Outbox Worker]
-    G --> I[Delivery Worker]
-    G --> J[Notification Worker]
-    F --> K[Export Worker]
-    K --> L[Artifacts: PDF/MD/ZIP/CSV]
+    U[User Browser] --> F[Next.js Frontend]
+    F --> A[FastAPI API]
+    F -. WebSocket .-> WS[WebSocket Gateway /api/ws]
+
+    A --> AUTH[Auth + CSRF + Authorization]
+    A --> LLM[LLM Pipeline<br/>prompt_builder -> parser -> output_finalize -> fallback]
+    A --> DB[(PostgreSQL)]
+    A --> R[(Redis)]
+
+    LLM --> DB
+    WS --> R
+
+    DB --> OX[Outbox Relay Worker]
+    OX --> RS[(Redis Streams)]
+    RS --> DW[Delivery Worker]
+    RS --> NW[Notification Worker]
+    RS --> GW[Generation Worker]
+    RS --> EW[Export Worker]
+
+    GW --> LLM
+    GW --> DB
+    EW --> DB
+    EW --> X[Export Artifacts<br/>Markdown / PDF / Scaffold ZIP / Terraform ZIP / Tasks CSV]
+
+    DW --> WS
+    NW --> WS
 ```
 
 ## Tech Stack

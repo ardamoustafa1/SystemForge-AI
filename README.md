@@ -77,40 +77,47 @@ SystemForge AI bu boslugu su sekilde kapatir:
 
 ## 3. Mimari Genel Bakis
 
-Asagidaki akis, paylastigin mimari stile uygun sekilde uçtan uca veri akisini gösterir:
+Asagidaki diyagram SystemForge AI'nin repository'deki gerçek servis/topoloji yapisini gösterir:
 
 ```mermaid
 flowchart LR
-    C1[Client: Web / Mobile / API Bot] --> R1[Risk Router]
-    C2[Partner Gateway] --> R1
-    C3[Optional API Gateway] --> R1
+    U[User Browser] --> F[Next.js Frontend]
+    F --> A[FastAPI API]
+    F -. WebSocket .-> WS[WebSocket Gateway /api/ws]
 
-    R1 --> S1[Security Layer<br/>Validation + CSRF + Error Handling]
-    S1 --> O1[Hybrid Orchestrator<br/>Prompt + Policy + Fallback]
+    A --> AUTH[Auth + CSRF + Authorization]
+    A --> LLM[LLM Pipeline<br/>prompt_builder -> parser -> output_finalize -> fallback]
+    A --> DB[(PostgreSQL)]
+    A --> R[(Redis)]
 
-    O1 --> D1[Role Detector<br/>TC / Phone / Email / Card / IBAN / User Address]
-    O1 --> D2[PII Name Detector]
-    O1 --> D3[AI Risk Service<br/>BERT / Heuristics]
+    LLM --> DB
+    WS --> R
 
-    D1 --> E1[Entity Pool]
-    D2 --> E1
-    D3 --> E1
+    DB --> OX[Outbox Relay Worker]
+    OX --> RS[(Redis Streams)]
+    RS --> DW[Delivery Worker]
+    RS --> NW[Notification Worker]
+    RS --> GW[Generation Worker]
+    RS --> EW[Export Worker]
 
-    E1 --> F1[Confidence Filter]
-    F1 --> M1[Masking Resolver]
-    M1 --> M2[Masking Engine<br/>Placeholder Replacement]
-    M2 --> O2[Sanitized Output + Audit]
+    GW --> LLM
+    GW --> DB
+    EW --> DB
+    EW --> X[Export Artifacts<br/>Markdown / PDF / Scaffold ZIP / Terraform ZIP / Tasks CSV]
+
+    DW --> WS
+    NW --> WS
 ```
 
 ### Kisa Akis Özeti
 
-1. Istek frontend veya harici client üzerinden API katmanina gelir.
-2. Güvenlik katmani auth, CSRF, validasyon ve rate limit kontrollerini uygular.
-3. Orkestrasyon katmani prompt olusturur, policy/fallback kurallarini uygular.
-4. LLM üretimi schema ile dogrulanir ve güvenli ciktiya finalize edilir.
-5. Design artefact veritabanina kaydedilir; outbox/event akisi tetiklenir.
-6. Realtime dagitim ve notification worker'lari istemcileri günceller.
-7. Kullanici design review, versiyonlama ve export akislarini yürütür.
+1. Kullanici `frontend` (Next.js) üzerinden API ve WebSocket baglantilarini baslatir.
+2. `backend` (FastAPI) tarafinda auth, CSRF, yetkilendirme ve request validasyon kontrolleri çalisir.
+3. Design generation akisi `backend/app/llm/` pipeline'i ile yürür: prompt olusturma, parse, finalize, fallback.
+4. Kalici veriler PostgreSQL'e yazilir; event odakli dagitim için outbox + Redis Streams kullanilir.
+5. Worker'lar (`generation`, `export`, `outbox`, `delivery`, `notification`) asenkron isleri tüketir ve üretir.
+6. Realtime eventler delivery/notification workerlari üzerinden WebSocket gateway'e iletilir.
+7. Export worker, artefact ciktilarini (Markdown/PDF/ZIP/CSV) olusturur ve job merkezine baglar.
 
 ## 4. Teknik Mimari Detaylari
 
