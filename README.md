@@ -1,6 +1,8 @@
 # SystemForge AI
 
-SystemForge AI, ürün gereksinimlerini üretime hazır sistem tasarımı çıktılarina dönüstüren, full-stack bir AI Engineering Workspace platformudur.
+Yapay zeka ile üretime hazır sistem tasarımları oluşturun
+
+Ürün gereksinimlerini saniyeler içinde mimari, diyagram ve uygulanabilir mühendislik çıktılarina dönüştüren güçlü bir platform.
 
 Platform, klasik "chatbot" deneyiminden farkli olarak **artifact-first** yaklasimla tasarlanmistir: üretim; inceleme; versiyonlama; güvenlik; export ve ekip içi teslim akisi tek bir yerde birlesir.
 
