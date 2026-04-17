@@ -17,6 +17,7 @@ English version: [README.en.md](README.en.md)
 
 ## Icerik
 
+- [Demo](#demo)
 - [1. Projenin Amaci](#1-projenin-amaci)
 - [2. One Cikan Yetenekler](#2-one-cikan-yetenekler)
 - [3. Mimari Genel Bakis](#3-mimari-genel-bakis)
@@ -39,6 +40,34 @@ English version: [README.en.md](README.en.md)
 - [20. Changelog Politikasi](#20-changelog-politikasi)
 - [21. Yol Haritasi ve Kisitlar](#21-yol-haritasi-ve-kisitlar)
 - [22. Lisans](#22-lisans)
+
+## Demo
+
+Bu bölüm GitHub ziyaretçisinin projeyi 10-15 saniyede anlamasi için hazirlandi.
+
+### Product Demo (GIF)
+
+Demo GIF bölümü bu sürümde kaldirildi. Proje akisini hizli incelemek için asagidaki "Use Case" adimlarini takip edebilirsin.
+
+### Architecture (Highlighted)
+
+Mimari diyagram bu README içinde `3. Mimari Genel Bakis` bölümünde yer alir ve gerçek servis topolojisini gösterir:
+
+- Next.js frontend -> FastAPI API
+- Auth/CSRF/authorization + LLM pipeline
+- PostgreSQL + Redis + Redis Streams
+- Outbox, delivery, notification, generation, export worker akislari
+
+### Use Case (Nasil Yapacagiz?)
+
+Temel kullanim senaryosu:
+
+1. Dashboard'dan yeni bir design brief olustur.
+2. Gereksinimleri ve teknik baglami girip generation baslat.
+3. Üretilen architecture ciktilarini (summary, trade-off, checklist, diagram) incele.
+4. Review durumunu güncelle (`in_review` / `approved`) ve yorum ekle.
+5. Gerekirse regenerate veya version compare/explain akislarini kullan.
+6. Son ciktiyi Markdown/PDF/ZIP/CSV formatlarinda export et.
 
 ## 1. Projenin Amaci
 
