@@ -1,26 +1,29 @@
 groups:
-  - name: systemforge-slo
-    interval: 30s
-    rules:
-      - alert: GenerationLatencyHigh
-        expr: histogram_quantile(0.95, sum(rate(http_request_latency_ms_bucket{path=~".*/designs.*"}[10m])) by (le)) > 15000
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Generation p95 latency exceeded 15s"
-      - alert: ExportQueueLagGrowing
-        expr: (sum(rate(worker_events_total{worker="export",event="queued"}[10m])) - sum(rate(worker_events_total{worker="export",event="processed"}[10m]))) > 5
-        for: 10m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Export queue lag is increasing"
-      - alert: AbuseSpikeDetected
-        expr: sum(rate(abuse_counter_high_severity[5m])) > 1
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "High severity abuse events detected"
+- name: SystemForgeAlerts
+  rules:
+  - alert: HighErrorRate
+    expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High API Error Rate"
+      description: "API 5xx error rate is above 5% for the last 2 minutes."
+      
+  - alert: WorkerQueueLag
+    expr: sum(redis_stream_pending_messages) > 1000
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Worker Queue Depth"
+      description: "More than 1000 pending messages in Redis streams."
 
+  - alert: DatabaseConnectionsHigh
+    expr: sum(pg_stat_activity_count) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High DB connection count"
+      description: "PostgreSQL active connections are near the default limit."
