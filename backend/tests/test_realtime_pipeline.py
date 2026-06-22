@@ -69,7 +69,9 @@ class FakeRedis:
         self.zset_data.get(key, {}).pop(member, None)
         return 1
 
-    async def eval(self, script: str, numkeys: int, zset_key: str, stream_key: str, now_ms: str, max_count: str, maxlen: str):
+    async def eval(
+        self, script: str, numkeys: int, zset_key: str, stream_key: str, now_ms: str, max_count: str, maxlen: str
+    ):
         due = await self.zrangebyscore(zset_key, 0, int(now_ms), 0, int(max_count))
         promoted = 0
         for raw in due:
