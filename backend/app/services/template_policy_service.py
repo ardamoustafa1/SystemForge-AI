@@ -30,4 +30,3 @@ async def update_template_policy(workspace_id: int, payload: dict) -> dict:
     doc = {"workspace_id": workspace_id, **payload}
     await redis.set(_key(workspace_id), json.dumps(doc), ex=60 * 60 * 24 * 30)
     return doc
-
