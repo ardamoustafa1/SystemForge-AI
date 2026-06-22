@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "SystemForge AI API"
-    app_env: str = "development"
+    app_env: str = "production"
     api_prefix: str = "/api"
     api_version: str = "v1"
     api_deprecation_policy_url: str = "https://semver.org/"
@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     # Public share links point to the frontend (e.g. https://app.example.com/share/<token>).
     public_app_url: str = "http://localhost:3000"
+
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "noreply@systemforge.dev"
 
     # PDF: optional Mermaid → PNG via Kroki (POST JSON to kroki_url). Disable for air-gapped CI.
     mermaid_pdf_render_enabled: bool = True
@@ -30,6 +36,8 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     jwt_secret: str = "change-me"
+    jwt_private_key: str = ""
+    jwt_public_key: str = ""
     metrics_secret: str = "change-me-metrics"
     jwt_algorithm: str = "HS256"
     jwt_exp_minutes: int = 60 * 12
@@ -37,7 +45,7 @@ class Settings(BaseSettings):
     auth_cookie_name: str = "sf_access_token"
     refresh_cookie_name: str = "sf_refresh_token"
     csrf_cookie_name: str = "sf_csrf_token"
-    cookie_secure: bool = False
+    cookie_secure: bool = True
     cookie_samesite: str = "lax"
 
     openai_api_key: str = ""
@@ -50,6 +58,7 @@ class Settings(BaseSettings):
 
     rate_limit_per_minute: int = 30
     sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.1
     otel_exporter_otlp_endpoint: str = ""
     auto_create_tables: bool = False
     outbox_relay_batch_size: int = 200
@@ -84,7 +93,7 @@ class Settings(BaseSettings):
     notification_pending_idle_ms: int = 30000
     delivery_pending_idle_ms: int = 30000
     delivery_recipient_dedupe_ttl_seconds: int = 86400
-    prompt_abuse_policy_mode: str = "log-only"  # block | challenge | log-only
+    prompt_abuse_policy_mode: str = "challenge"  # block | challenge | log-only
     prompt_abuse_score_block_threshold: int = 80
     prompt_abuse_score_challenge_threshold: int = 50
 
