@@ -24,7 +24,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Lokal backend:
+Local backend:
 
 ```bash
 cd backend
@@ -35,7 +35,7 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-Lokal frontend:
+Local frontend:
 
 ```bash
 cd frontend
@@ -49,6 +49,7 @@ Run before opening a pull request:
 
 ```bash
 ruff check backend/app backend/tests
+mypy backend/app backend/tests
 pytest backend/tests -q
 
 cd frontend
