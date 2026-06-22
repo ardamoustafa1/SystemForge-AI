@@ -28,15 +28,27 @@ SystemForge AI turns that flow into a product:
 - **Exports** for Markdown, PDF, scaffold ZIP, Terraform ZIP, and task CSV workflows.
 - **Local demo seed data** so visitors can understand the product in minutes.
 
-## Product screenshots
+## Product tour
 
-| Landing | Sign-up / onboarding |
-|---|---|
-| ![SystemForge landing page](docs/assets/systemforge-landing.png) | ![SystemForge sign-up page](docs/assets/systemforge-signup.png) |
+<p align="center">
+  <img src="docs/assets/systemforge-landing.png" alt="SystemForge AI product overview" width="100%">
+</p>
 
-| Seeded demo dashboard | Architecture review artifact |
-|---|---|
-| ![SystemForge seeded dashboard](docs/assets/systemforge-dashboard.png) | ![SystemForge architecture review](docs/assets/systemforge-design-review.png) |
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/assets/systemforge-dashboard.png" alt="SystemForge AI seeded architecture dashboard">
+    </td>
+    <td width="50%">
+      <img src="docs/assets/systemforge-design-review.png" alt="SystemForge AI collaborative architecture review">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <img src="docs/assets/systemforge-signup.png" alt="SystemForge AI workspace onboarding">
+    </td>
+  </tr>
+</table>
 
 ## 3-minute demo
 
