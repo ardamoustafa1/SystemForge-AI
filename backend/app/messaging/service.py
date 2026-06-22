@@ -389,4 +389,3 @@ def build_sync_response(
         "last_server_seq": last_server_seq,
         "has_more": has_more,
     }
-
