@@ -22,9 +22,7 @@ def is_active_conversation_member(db: Session, *, conversation_id: int, user_id:
     return db.execute(stmt).scalar_one_or_none() is not None
 
 
-def get_message_by_sender_client_id(
-    db: Session, *, sender_user_id: int, client_msg_id: str
-) -> Message | None:
+def get_message_by_sender_client_id(db: Session, *, sender_user_id: int, client_msg_id: str) -> Message | None:
     stmt = select(Message).where(
         and_(
             Message.sender_user_id == sender_user_id,
@@ -59,11 +57,7 @@ def allocate_server_seq(db: Session, *, conversation_id: int) -> int:
     """
     Allocates a strictly monotonic per-conversation sequence under row lock.
     """
-    lock_stmt = (
-        select(Conversation)
-        .where(Conversation.id == conversation_id)
-        .with_for_update()
-    )
+    lock_stmt = select(Conversation).where(Conversation.id == conversation_id).with_for_update()
     conversation = db.execute(lock_stmt).scalar_one_or_none()
     if conversation is None:
         raise ValueError("Conversation not found")
@@ -423,4 +417,3 @@ def mark_recipient_read_upto(
     )
     result = db.execute(stmt)
     return int(result.rowcount or 0)
-
