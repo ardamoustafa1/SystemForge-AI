@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 import logging
 
@@ -8,6 +9,7 @@ from app.core.redis import close_redis_client, get_redis_client
 from app.db.base import Base
 from app.db.session import engine
 import app.models  # noqa: F401
+from app.realtime.ws_gateway import connection_manager
 
 logger = logging.getLogger("systemforge.startup")
 
@@ -28,4 +30,10 @@ async def app_lifespan(_: FastAPI):
     try:
         yield
     finally:
+        logger.info("Initiating graceful shutdown...")
+        # Disconnect all active WebSockets with a closing code
+        await connection_manager.disconnect_all()
+        # Allow pending async tasks to finish
+        await asyncio.sleep(0.5)
         await close_redis_client()
+        logger.info("Graceful shutdown complete.")
