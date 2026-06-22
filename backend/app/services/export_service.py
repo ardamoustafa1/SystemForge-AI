@@ -83,12 +83,16 @@ def build_markdown_export(design_title: str, design_input: DesignInputPayload, o
         *_section_list("Video ingest and packaging", output.video_streaming_architecture.ingest_and_packaging),
         *_section_list("Video CDN strategy", output.video_streaming_architecture.cdn_strategy),
         *_section_list("Adaptive bitrate strategy", output.video_streaming_architecture.adaptive_bitrate_strategy),
-        *_section_list("Realtime interaction sidecar", output.video_streaming_architecture.realtime_interaction_sidecar),
+        *_section_list(
+            "Realtime interaction sidecar", output.video_streaming_architecture.realtime_interaction_sidecar
+        ),
         *_section_list("Database primary entities", output.database_architecture.primary_entities),
         *_section_list("Database schema design", output.database_architecture.schema_design),
         *_section_list("Database indexing strategy", output.database_architecture.indexing_strategy),
         *_section_list("Database partitioning strategy", output.database_architecture.partitioning_strategy),
-        *_section_list("Database consistency and migration notes", output.database_architecture.consistency_and_migration_notes),
+        *_section_list(
+            "Database consistency and migration notes", output.database_architecture.consistency_and_migration_notes
+        ),
         *_section_list("Observability logging strategy", output.observability_architecture.logging_strategy),
         *_section_list("Observability tracing strategy", output.observability_architecture.tracing_strategy),
         *_section_list("Observability metrics strategy", output.observability_architecture.metrics_strategy),
