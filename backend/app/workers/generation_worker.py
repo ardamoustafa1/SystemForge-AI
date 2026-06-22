@@ -18,8 +18,10 @@ from app.core.metrics import observe_worker_event, set_worker_queue_lag, observe
 
 logger = logging.getLogger("systemforge.generation")
 
+
 def _generation_stream() -> str:
     return f"{get_settings().outbox_stream_prefix}:generation"
+
 
 class GenerationWorker:
     def __init__(self) -> None:
@@ -80,10 +82,18 @@ class GenerationWorker:
                 await self._emit_design_event(
                     user_id,
                     "design.progress",
-                    {"design_id": design_id, "status": "generating", "phase": "context_parsed", "progress_pct": 15, "trace_id": trace_id},
+                    {
+                        "design_id": design_id,
+                        "status": "generating",
+                        "phase": "context_parsed",
+                        "progress_pct": 15,
+                        "trace_id": trace_id,
+                    },
                 )
             except Exception:
-                logger.debug("generation_worker_progress_emit_failed", extra={"design_id": design_id, "phase": "context_parsed"})
+                logger.debug(
+                    "generation_worker_progress_emit_failed", extra={"design_id": design_id, "phase": "context_parsed"}
+                )
 
             logger.info("generation_worker_starting_generation", extra={"design_id": design_id})
             observe_worker_event("generation", "started")
@@ -94,20 +104,37 @@ class GenerationWorker:
                 await self._emit_design_event(
                     user_id,
                     "design.progress",
-                    {"design_id": design_id, "status": "generating", "phase": "architecture_designed", "progress_pct": 65, "trace_id": trace_id},
+                    {
+                        "design_id": design_id,
+                        "status": "generating",
+                        "phase": "architecture_designed",
+                        "progress_pct": 65,
+                        "trace_id": trace_id,
+                    },
                 )
             except Exception:
-                logger.debug("generation_worker_progress_emit_failed", extra={"design_id": design_id, "phase": "architecture_designed"})
-            
+                logger.debug(
+                    "generation_worker_progress_emit_failed",
+                    extra={"design_id": design_id, "phase": "architecture_designed"},
+                )
+
             markdown_export = build_markdown_export(input_payload.project_title, input_payload, output_payload)
             try:
                 await self._emit_design_event(
                     user_id,
                     "design.progress",
-                    {"design_id": design_id, "status": "generating", "phase": "finalizing", "progress_pct": 90, "trace_id": trace_id},
+                    {
+                        "design_id": design_id,
+                        "status": "generating",
+                        "phase": "finalizing",
+                        "progress_pct": 90,
+                        "trace_id": trace_id,
+                    },
                 )
             except Exception:
-                logger.debug("generation_worker_progress_emit_failed", extra={"design_id": design_id, "phase": "finalizing"})
+                logger.debug(
+                    "generation_worker_progress_emit_failed", extra={"design_id": design_id, "phase": "finalizing"}
+                )
 
             with SessionLocal() as db:
                 design = db.query(Design).filter(Design.id == design_id).first()
@@ -126,19 +153,21 @@ class GenerationWorker:
                     )
                     db.add(existing_output)
                 else:
-                    db.add(DesignOutputVersion(
-                        design_id=design.id,
-                        payload=dict(existing_output.payload),
-                        markdown_export=existing_output.markdown_export,
-                        model_name=existing_output.model_name,
-                        generation_ms=existing_output.generation_ms,
-                        scale_stance=scale_stance,
-                    ))
+                    db.add(
+                        DesignOutputVersion(
+                            design_id=design.id,
+                            payload=dict(existing_output.payload),
+                            markdown_export=existing_output.markdown_export,
+                            model_name=existing_output.model_name,
+                            generation_ms=existing_output.generation_ms,
+                            scale_stance=scale_stance,
+                        )
+                    )
                     existing_output.payload = output_payload.model_dump()
                     existing_output.markdown_export = markdown_export
                     existing_output.model_name = model_name
                     existing_output.generation_ms = generation_ms
-                
+
                 design.status = "completed"
                 design.updated_at = datetime.now(timezone.utc)
                 db.commit()
@@ -153,7 +182,13 @@ class GenerationWorker:
                 await self._emit_design_event(
                     user_id,
                     "design.updated",
-                    {"design_id": design_id, "status": "completed", "phase": "completed", "progress_pct": 100, "trace_id": trace_id},
+                    {
+                        "design_id": design_id,
+                        "status": "completed",
+                        "phase": "completed",
+                        "progress_pct": 100,
+                        "trace_id": trace_id,
+                    },
                 )
             except Exception:
                 pass
@@ -221,7 +256,7 @@ class GenerationWorker:
         if not entries:
             set_worker_queue_lag("generation", 0)
             return processed
-            
+
         for _, stream_entries in entries:
             set_worker_queue_lag("generation", float(len(stream_entries)))
             for event_id, fields in stream_entries:
