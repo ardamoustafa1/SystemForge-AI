@@ -16,4 +16,3 @@ def get_ops_summary(
     workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
 ):
     return get_workspace_ops_summary(db=db, workspace_member=workspace_member)
-
