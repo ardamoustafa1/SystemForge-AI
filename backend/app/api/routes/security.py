@@ -58,4 +58,3 @@ async def anomaly_summary(
         "anomalies": anomalies,
         "signals": {"high_severity": high, "rate_limited": rate_limited, "ws_events": ws_events},
     }
-
