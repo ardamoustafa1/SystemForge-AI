@@ -1,11 +1,11 @@
 from fastapi import Security, HTTPException, status, Depends
 from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy.orm import Session
-from passlib.hash import bcrypt
 
 from app.db.session import get_db
 from app.models.user import User
-from app.models.design import UserSettings
+from app.models import UserSettings
+from app.core.security import verify_password
 
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
@@ -36,7 +36,7 @@ def verify_api_key(api_key_header: str = Security(api_key_header), db: Session =
     )
 
     for setting in possible_settings:
-        if setting.api_key_hash and bcrypt.verify(api_key_header, setting.api_key_hash):
+        if setting.api_key_hash and verify_password(api_key_header, setting.api_key_hash):
             user = db.query(User).filter(User.id == setting.user_id, User.is_active.is_(True)).first()
             if user:
                 return user
