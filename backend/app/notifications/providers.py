@@ -58,9 +58,13 @@ class WebhookPushProvider:
         self.apns_url = (apns_url or "").strip()
         self.timeout_seconds = max(1, int(timeout_seconds))
 
-    async def _post(self, *, provider: str, url: str, token: str, title: str, body: str, data: dict) -> NotificationResult:
+    async def _post(
+        self, *, provider: str, url: str, token: str, title: str, body: str, data: dict
+    ) -> NotificationResult:
         if not url:
-            return NotificationResult(ok=False, provider=provider, token=token, error=f"{provider}_webhook_not_configured")
+            return NotificationResult(
+                ok=False, provider=provider, token=token, error=f"{provider}_webhook_not_configured"
+            )
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
                 resp = await client.post(
@@ -70,7 +74,9 @@ class WebhookPushProvider:
                 )
             if 200 <= resp.status_code < 300:
                 return NotificationResult(ok=True, provider=provider, token=token)
-            return NotificationResult(ok=False, provider=provider, token=token, error=f"{provider}_http_{resp.status_code}")
+            return NotificationResult(
+                ok=False, provider=provider, token=token, error=f"{provider}_http_{resp.status_code}"
+            )
         except Exception:
             logger.exception("push_webhook_failed", extra={"provider": provider})
             return NotificationResult(ok=False, provider=provider, token=token, error=f"{provider}_transport_error")
