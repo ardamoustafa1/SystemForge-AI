@@ -43,7 +43,7 @@ The demo seed job is idempotent and creates three showcase designs:
 4. Export an artifact.
 5. Create a new design brief and compare the output.
 
-An OpenAI key is optional for local exploration. Without a key, the deterministic fallback generator still returns schema-valid demo output.
+An OpenAI key is optional for local exploration. If no model key is configured, the deterministic fallback generator still creates schema-valid demo artifacts.
 
 ## Stop
 
