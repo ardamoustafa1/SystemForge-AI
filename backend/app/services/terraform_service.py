@@ -22,6 +22,7 @@ def _readme(title: str) -> str:
         # {title} - Terraform Infrastructure setup
 
         > Auto-generated AWS Infrastructure as Code by **SystemForge AI**.
+        > *Note: Currently, only AWS is supported as a Terraform provider. GCP and Azure support are planned for future releases.*
 
         ## Getting Started
 
@@ -121,7 +122,7 @@ def _main_tf(flags: dict[str, bool]) -> str:
               cluster_identifier      = "${var.project_name}-docdb"
               engine                  = "docdb"
               master_username         = "admin"
-              master_password         = "changeme123"
+              master_password         = var.docdb_master_password
               skip_final_snapshot     = true
               vpc_security_group_ids  = [module.vpc.default_security_group_id]
               db_subnet_group_name    = aws_docdb_subnet_group.mongo_subnet.name
@@ -143,8 +144,8 @@ def _main_tf(flags: dict[str, bool]) -> str:
     return body
 
 
-def _variables_tf() -> str:
-    return dedent("""\
+def _variables_tf(flags: dict[str, bool]) -> str:
+    body = dedent("""\
         variable "aws_region" {
           description = "AWS Region to deploy to"
           type        = string
@@ -157,6 +158,17 @@ def _variables_tf() -> str:
           default     = "systemforge-app"
         }
     """)
+    
+    if flags.get("mongo"):
+        body += dedent("""\
+
+            variable "docdb_master_password" {
+              description = "Master password for DocumentDB"
+              type        = string
+              sensitive   = true
+            }
+        """)
+    return body
 
 
 def _outputs_tf(flags: dict[str, bool]) -> str:
@@ -206,7 +218,7 @@ def build_terraform_zip(
 
         zf.writestr(f"{slug}/README.md", _readme(title))
         zf.writestr(f"{slug}/main.tf", _main_tf(flags))
-        zf.writestr(f"{slug}/variables.tf", _variables_tf())
+        zf.writestr(f"{slug}/variables.tf", _variables_tf(flags))
         zf.writestr(f"{slug}/outputs.tf", _outputs_tf(flags))
 
     return buf.getvalue()
