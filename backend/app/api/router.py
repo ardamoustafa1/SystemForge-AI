@@ -1,6 +1,18 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, design_versions, designs, exports, health, public_share, workspaces, settings, dashboard, security, advanced_features
+from app.api.routes import (
+    auth,
+    design_versions,
+    designs,
+    exports,
+    health,
+    public_share,
+    workspaces,
+    settings,
+    dashboard,
+    security,
+    advanced_features,
+)
 from app.realtime.ws_gateway import router as ws_router
 
 api_router = APIRouter()
