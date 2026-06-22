@@ -8,6 +8,7 @@ from app.workers.generation_worker import GenerationWorker
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("systemforge.generation.runner")
 
+
 async def _run_forever() -> None:
     worker = GenerationWorker()
     logger.info("generation_worker_started")
@@ -22,8 +23,10 @@ async def _run_forever() -> None:
             logger.exception("generation_worker_loop_error")
             await asyncio.sleep(1)
 
+
 def main() -> None:
     asyncio.run(_run_forever())
+
 
 if __name__ == "__main__":
     main()
