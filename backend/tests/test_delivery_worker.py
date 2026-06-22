@@ -40,18 +40,22 @@ class FakeRedis:
 
 @pytest.mark.asyncio
 async def test_delivery_worker_recipient_dedupe(monkeypatch):
-    worker = DeliveryWorker()
     fake = FakeRedis()
     fake.online_users = {20}
-    worker.redis = fake
+    monkeypatch.setattr("app.workers.delivery_worker.get_redis_client", lambda: fake)
+    worker = DeliveryWorker()
 
     queued_notifications: list[tuple[int, dict]] = []
 
-    async def fake_enqueue_notification(*, recipient_user_id: int, message_payload: dict, attempts: int = 0, not_before_ms=None):
+    async def fake_enqueue_notification(
+        *, recipient_user_id: int, message_payload: dict, attempts: int = 0, not_before_ms=None
+    ):
         queued_notifications.append((recipient_user_id, message_payload))
         return "q-1"
 
-    monkeypatch.setattr("app.workers.delivery_worker.notification_service.enqueue_notification", fake_enqueue_notification)
+    monkeypatch.setattr(
+        "app.workers.delivery_worker.notification_service.enqueue_notification", fake_enqueue_notification
+    )
 
     payload = {
         "message_id": 101,
@@ -98,10 +102,10 @@ async def test_delivery_worker_fanout_delivery_and_read_updates(monkeypatch):
         )
         db.commit()
 
-    worker = DeliveryWorker()
     fake = FakeRedis()
-    worker.redis = fake
+    monkeypatch.setattr("app.workers.delivery_worker.get_redis_client", lambda: fake)
     monkeypatch.setattr("app.workers.delivery_worker.SessionLocal", TestingSessionLocal)
+    worker = DeliveryWorker()
 
     delivered_fields = {
         "event_type": "message.delivered",
