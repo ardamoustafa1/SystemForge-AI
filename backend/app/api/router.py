@@ -11,7 +11,7 @@ from app.api.routes import (
     settings,
     dashboard,
     security,
-    advanced_features,
+    ai_analysis,
 )
 from app.realtime.ws_gateway import router as ws_router
 
@@ -25,6 +25,6 @@ api_router.include_router(workspaces.router)
 api_router.include_router(designs.router)
 api_router.include_router(design_versions.router)
 api_router.include_router(exports.router)
-api_router.include_router(advanced_features.router)
+api_router.include_router(ai_analysis.router)
 api_router.include_router(public_share.router)
 api_router.include_router(ws_router)
