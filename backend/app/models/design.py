@@ -10,7 +10,9 @@ class Design(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    workspace_id: Mapped[int | None] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True)
+    workspace_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(160), nullable=False, index=True)
     project_type: Mapped[str] = mapped_column(String(80), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="completed")
@@ -89,6 +91,10 @@ class UserSettings(Base, TimestampMixin):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     theme: Mapped[str] = mapped_column(String(20), default="system", nullable=False)
     default_mode: Mapped[str] = mapped_column(String(20), default="product", nullable=False)
+    api_key_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    api_key_last4: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    api_key_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    api_key_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", back_populates="settings")
 
