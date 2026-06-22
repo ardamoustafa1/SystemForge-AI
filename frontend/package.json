@@ -13,7 +13,7 @@
     "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.9.1",
+    "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-slot": "^1.1.1",
     "@xyflow/react": "^12.10.2",
     "class-variance-authority": "^0.7.1",
