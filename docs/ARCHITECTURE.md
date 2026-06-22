@@ -1,76 +1,107 @@
-# SystemForge AI Architecture
+# Architecture Overview
 
-SystemForge AI is an artifact-first architecture assistant. The product is built around one idea: architecture work should produce reviewable, versioned, exportable artifacts instead of disappearing inside a chat transcript.
+SystemForge AI utilizes a modern, event-driven microservices architecture designed to handle long-running, asynchronous LLM operations reliably without blocking the user interface.
 
-## System Context
+## System Topology
+
+1. **Frontend (Next.js 15)**
+   - Deployed on Vercel or a Node.js runtime.
+   - Handles the React UI, client-side state, and communicates with the Backend via REST and WebSockets.
+
+2. **Backend (FastAPI)**
+   - The primary API gateway and business logic orchestrator.
+   - Handles authentication, RBAC, and synchronous validation.
+
+3. **Data Layer (PostgreSQL & Redis)**
+   - **PostgreSQL**: The source of truth. Stores users, workspaces, and the massive JSON configurations of generated architectures.
+   - **Redis**: Serves a dual purpose: caching layer and the underlying pub/sub mechanism for asynchronous streams.
 
 ```mermaid
-flowchart LR
-    User["Engineer / Product Team"] --> Web["Next.js Web App"]
-    Web --> API["FastAPI API"]
-    Web -. "WebSocket events" .-> WS["Realtime Gateway"]
-    API --> Auth["Auth, CSRF, RBAC"]
-    API --> Design["Design Service"]
-    API --> Export["Export Service"]
-    Design --> LLM["Schema-first LLM Pipeline"]
-    Design --> DB[("PostgreSQL")]
-    Export --> DB
-    API --> Redis[("Redis")]
-    DB --> Outbox["Outbox Relay"]
-    Outbox --> Streams["Redis Streams"]
-    Streams --> Generation["Generation Worker"]
-    Streams --> Delivery["Delivery Worker"]
-    Streams --> Notification["Notification Worker"]
-    Streams --> ExportWorker["Export Worker"]
-    Generation --> LLM
-    Delivery --> WS
-    ExportWorker --> Artifacts["Markdown / PDF / ZIP / CSV"]
+graph TD
+    User["User Client"] --> Ingress["NGINX Ingress"]
+    Ingress --> Frontend["Next.js Frontend"]
+    Ingress --> API["FastAPI Backend"]
+    Frontend --> API
+    
+    API --> PG[("PostgreSQL\n(Primary & Outbox)")]
+    API --> Redis[("Redis\n(Cache & Streams)")]
+    
+    OutboxWorker["Outbox Worker"] --> PG
+    OutboxWorker --> Redis
+    
+    GenWorker["Generation Worker"] --> Redis
+    GenWorker --> PG
+    GenWorker --> LLM["LLM Provider (OpenAI/Anthropic)"]
+    
+    ExportWorker["Export Worker"] --> Redis
+    ExportWorker --> PG
 ```
 
-## Request Lifecycle
+## Event-Driven Asynchrony (Transactional Outbox)
 
-1. A user creates a design brief in the web app.
-2. The API validates the request with Pydantic contracts, auth checks, CSRF checks, workspace membership, rate limits, and usage quotas.
-3. The generation service calls the schema-first LLM pipeline. If no model provider is configured, the deterministic fallback generator still returns a valid architecture artifact for local demos.
-4. The generated output is saved as structured JSON plus Markdown/PDF-ready export content.
-5. Outbox and Redis Streams distribute realtime updates and background jobs.
-6. Users review, comment, regenerate, share, and export the artifact.
+To ensure high reliability when delegating tasks to workers (e.g., calling OpenAI), we use the **Transactional Outbox Pattern**:
 
-## Core Modules
+1. A user requests a new architecture.
+2. The FastAPI backend opens a PostgreSQL transaction.
+3. It inserts the new "Pending Design" record into the `designs` table.
+4. Within the *same transaction*, it inserts a "Generation Requested" event into the `outbox_events` table.
+5. The transaction commits.
+6. The **Outbox Relay Worker** polls the `outbox_events` table and pushes the event into a Redis Stream.
+7. The **Generation Worker** pulls the event from the Redis Stream, processes the LLM call, and updates the database.
 
-| Layer | Path | Responsibility |
-|---|---|---|
-| Web app | `frontend/app` | Landing, auth, dashboard, design detail, settings |
-| UI components | `frontend/components` | Layout, design artifact grid, diagrams, forms |
-| API routes | `backend/app/api/routes` | HTTP contracts and dependency wiring |
-| Auth | `backend/app/auth` | Login, registration, current-user/session dependencies |
-| Domain services | `backend/app/services` | Design generation, exports, authorization, jobs |
-| LLM pipeline | `backend/app/llm` | Prompting, fallback, parsing, finalization, consistency checks |
-| Realtime | `backend/app/realtime` | WebSocket gateway, protocol, presence |
-| Messaging | `backend/app/messaging` | Outbox/event models and repositories |
-| Workers | `backend/app/workers` | Generation, export, notification, delivery, outbox relay |
-| Operations | `ops` | Helm, dashboards, alerts, runbooks, load tests |
+*Benefit*: We never encounter a state where the database record is created but the worker message is lost due to a network blip.
 
-## Data Model Highlights
+### Database Schema Overview
 
-- `users`: identity, password hash, token version, default workspace.
-- `workspaces` and `workspace_members`: tenant boundary and RBAC.
-- `designs`: top-level architecture artifact metadata.
-- `design_inputs`: original brief payload.
-- `design_outputs`: structured generated artifact and Markdown export.
-- `design_output_versions`: regeneration history.
-- `design_comments`: review collaboration.
-- `outbox_events`: reliable event handoff to Redis Streams.
+```mermaid
+erDiagram
+    User ||--o{ Workspace : owns
+    Workspace ||--o{ Design : contains
+    Design ||--|| DesignInput : has
+    Design ||--o{ DesignOutput : has
+    DesignOutput ||--o{ DesignOutputVersion : tracks
+```
 
-## Reliability Patterns
+## Worker Ecosystem
 
-- Workspace-first authorization boundary.
-- Idempotency hooks for mutation-heavy flows.
-- Deterministic fallback generation for local demos and provider failure recovery.
-- Outbox pattern for async fanout.
-- Worker separation for generation, export, delivery, and notification responsibilities.
-- Structured health/readiness endpoints.
+The system delegates heavy processing to isolated workers, allowing independent scaling:
 
-## Production-Oriented Boundaries
+- **Generation Worker**: Handles the heavy interaction with LLMs (OpenAI/Anthropic).
+- **Export Worker**: Processes requests to convert JSON architectures into Terraform or PDF files.
+- **Notification Worker**: Dispatches emails or Slack alerts.
+- **Delivery Worker**: Manages the finalization of states and webhook deliveries to external systems.
 
-SystemForge AI is designed with production-oriented seams: strict schemas, isolated workers, migrations, Helm manifests, runbooks, and observability assets. Before using it for a real customer-facing production deployment, run the production checklist and security checks in `ops/PRODUCTION_CHECKLIST.md` and `docs/SECURITY_POSTURE.md`.
+## Real-Time Collaboration (WebSockets)
+
+When multiple users view the same architecture dashboard, they require real-time updates:
+
+- Clients establish a WebSocket connection to the FastAPI backend.
+- The backend subscribes to a Redis Pub/Sub channel specific to that design artifact.
+- When any user makes a mutation (or when a worker completes a generation), an event is broadcast over Redis.
+- All connected FastAPI nodes receive the broadcast and push it down their active WebSockets to the clients.
+
+```mermaid
+sequenceDiagram
+    participant U1 as User 1 (Viewer)
+    participant U2 as User 2 (Editor)
+    participant API as FastAPI Backend
+    participant Redis as Redis Pub/Sub
+    participant Worker as Generation Worker
+    
+    U1->>API: Connect WebSocket (Design A)
+    API->>Redis: Subscribe (Channel: A)
+    
+    U2->>API: Connect WebSocket (Design A)
+    API->>Redis: Subscribe (Channel: A)
+    
+    U2->>API: POST /designs/A/generate
+    API->>API: Enqueue Event (Outbox)
+    API-->>U2: 202 Accepted
+    
+    Worker->>Redis: Claim Event
+    Worker->>Worker: Call LLM
+    Worker->>Redis: Publish (Channel: A, Progress: 50%)
+    Redis-->>API: Forward Progress Event
+    API-->>U1: WebSocket Message (Progress)
+    API-->>U2: WebSocket Message (Progress)
+```
