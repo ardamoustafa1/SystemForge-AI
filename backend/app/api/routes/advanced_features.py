@@ -52,7 +52,11 @@ def retry_job(
     workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
-    run_async(enforce_idempotency("job-center-retry", f"{workspace_member.workspace_id}:{workspace_member.user_id}", idempotency_key, 90))
+    run_async(
+        enforce_idempotency(
+            "job-center-retry", f"{workspace_member.workspace_id}:{workspace_member.user_id}", idempotency_key, 90
+        )
+    )
     job_type = str(payload.get("job_type", ""))
     design_id = int(payload.get("design_id", 0) or 0)
     if design_id <= 0:
@@ -81,6 +85,7 @@ def retry_job(
         design.status = "generating"
         db.commit()
         from app.services.design_service import _enqueue_generation  # local import
+
         run_async(_enqueue_generation(design_id, "balanced", "en"))
         return {"ok": True, "job_type": "generation"}
     raise HTTPException(status_code=400, detail="Unsupported job_type")
@@ -92,7 +97,9 @@ async def pricing_sync(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
     require_workspace_role(workspace_member, RoleEnum.admin, RoleEnum.editor)
-    await enforce_idempotency("cost-pricing-sync", f"{workspace_member.workspace_id}:{workspace_member.user_id}", idempotency_key, 120)
+    await enforce_idempotency(
+        "cost-pricing-sync", f"{workspace_member.workspace_id}:{workspace_member.user_id}", idempotency_key, 120
+    )
     return await sync_cloud_pricing()
 
 
@@ -150,7 +157,9 @@ async def put_templates_policy_route(
     if workspace_member.workspace_id != workspace_id:
         raise HTTPException(status_code=403, detail="Workspace mismatch")
     require_workspace_role(workspace_member, RoleEnum.admin, RoleEnum.editor)
-    await enforce_idempotency("template-policy-update", f"{workspace_id}:{workspace_member.user_id}", idempotency_key, 180)
+    await enforce_idempotency(
+        "template-policy-update", f"{workspace_id}:{workspace_member.user_id}", idempotency_key, 180
+    )
     return await update_template_policy(workspace_id, payload)
 
 
@@ -162,8 +171,16 @@ def drift_detection(
     workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
-    run_async(enforce_idempotency("drift-detection", f"{workspace_member.workspace_id}:{workspace_member.user_id}:{design_id}", idempotency_key, 120))
+    run_async(
+        enforce_idempotency(
+            "drift-detection",
+            f"{workspace_member.workspace_id}:{workspace_member.user_id}:{design_id}",
+            idempotency_key,
+            120,
+        )
+    )
     from app.services.design_service import get_design_artifact_for_user
+
     design, design_input, design_output = get_design_artifact_for_user(db, workspace_member, design_id)
     observed_p95 = int(payload.get("observed_p95_ms", 0))
     observed_monthly_cost = int(payload.get("observed_monthly_usd", 0))
@@ -194,8 +211,16 @@ def roadmap_autopilot(
     workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
-    run_async(enforce_idempotency("roadmap-autopilot", f"{workspace_member.workspace_id}:{workspace_member.user_id}:{design_id}:{provider}", idempotency_key, 120))
+    run_async(
+        enforce_idempotency(
+            "roadmap-autopilot",
+            f"{workspace_member.workspace_id}:{workspace_member.user_id}:{design_id}:{provider}",
+            idempotency_key,
+            120,
+        )
+    )
     from app.services.design_service import get_design_artifact_for_user
+
     _, _, design_output = get_design_artifact_for_user(db, workspace_member, design_id)
     if not design_output:
         raise HTTPException(status_code=400, detail="Design output missing")
@@ -213,4 +238,3 @@ def roadmap_autopilot(
             }
         )
     return {"design_id": design_id, "provider": provider, "backlog_items": items}
-
