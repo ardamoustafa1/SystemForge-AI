@@ -45,8 +45,8 @@ jobs:
         run: |
           pip install uv
           uv pip install --system -e "backend[dev]"
-      - name: Backend typecheck (Pyre)
-        run: pyre --noninteractive check
+      - name: Backend typecheck (Mypy)
+        run: mypy backend/app backend/tests
 
   backend-test:
     runs-on: ubuntu-latest
@@ -54,7 +54,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run backend tests (Docker)
-        run: docker compose run --rm backend-test
+        run: |
+          docker compose --profile test run --name test-runner backend-test pytest --cov=app --cov-report=xml
+          docker cp test-runner:/app/coverage.xml ./backend/coverage.xml
+          docker rm test-runner
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./backend/coverage.xml
+          flags: backend
 
   frontend-lint:
     runs-on: ubuntu-latest
@@ -92,7 +102,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Frontend unit tests
-        run: npm run test
+        run: npm run test -- --coverage
 
   frontend-e2e:
     runs-on: ubuntu-latest
@@ -120,12 +130,13 @@ jobs:
         run: npm ci
       - name: Production build
         run: npm run build
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: E2E smoke
         run: npm run test:e2e
         env:
           CI: true
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
 
   security-scans:
     runs-on: ubuntu-latest
