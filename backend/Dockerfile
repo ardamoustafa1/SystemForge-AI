@@ -3,8 +3,8 @@ FROM python:3.12-slim AS base
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt && useradd -m appuser
+COPY pyproject.toml /app/pyproject.toml
+RUN pip install uv && uv pip install --system . && useradd -m appuser
 
 FROM base AS runtime
 COPY app /app/app
@@ -24,4 +24,5 @@ COPY scripts /app/scripts
 COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
 COPY pytest.ini /app/pytest.ini
+RUN uv pip install --system .[dev]
 CMD ["python", "-m", "pytest", "tests", "-q"]
