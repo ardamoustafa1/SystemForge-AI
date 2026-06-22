@@ -38,3 +38,18 @@ class RefreshTokenSession(Base):
     rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", back_populates="refresh_tokens")
+
+
+class UserSettings(Base, TimestampMixin):
+    __tablename__ = "user_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    theme: Mapped[str] = mapped_column(String(20), default="system", nullable=False)
+    default_mode: Mapped[str] = mapped_column(String(20), default="product", nullable=False)
+    api_key_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    api_key_last4: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    api_key_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    api_key_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User", back_populates="settings")
