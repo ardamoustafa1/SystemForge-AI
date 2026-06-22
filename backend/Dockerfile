@@ -25,4 +25,5 @@ COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
 COPY pytest.ini /app/pytest.ini
 RUN uv pip install --system .[dev]
+USER appuser
 CMD ["python", "-m", "pytest", "tests", "-q"]
