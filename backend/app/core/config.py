@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     jwt_secret: str = "change-me"
+    metrics_secret: str = "change-me-metrics"
     jwt_algorithm: str = "HS256"
     jwt_exp_minutes: int = 60 * 12
     refresh_exp_days: int = 14
@@ -49,6 +50,7 @@ class Settings(BaseSettings):
 
     rate_limit_per_minute: int = 30
     sentry_dsn: str = ""
+    otel_exporter_otlp_endpoint: str = ""
     auto_create_tables: bool = False
     outbox_relay_batch_size: int = 200
     outbox_relay_poll_ms: int = 500
