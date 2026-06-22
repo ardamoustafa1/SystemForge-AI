@@ -1,11 +1,12 @@
 from fastapi import Depends, Header, HTTPException, Request, status
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.models import RoleEnum, User, WorkspaceMember
+
 
 def get_current_user(
     request: Request,
@@ -24,7 +25,7 @@ def get_current_user(
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         user_id = int(payload.get("sub", "0"))
         token_version = int(payload.get("tv", 0))
-    except (JWTError, ValueError):
+    except (jwt.InvalidTokenError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
@@ -70,7 +71,9 @@ def get_active_workspace_member(
         try:
             workspace_id = int(x_workspace_id)
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid X-Workspace-Id header") from exc
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid X-Workspace-Id header"
+            ) from exc
     elif user.default_workspace_id is not None:
         workspace_id = int(user.default_workspace_id)
 
@@ -84,11 +87,11 @@ def get_active_workspace_member(
         )
         if member:
             return member
+        if x_workspace_id is not None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Workspace access denied")
 
     member = db.scalar(
-        select(WorkspaceMember)
-        .where(WorkspaceMember.user_id == user.id)
-        .order_by(WorkspaceMember.id.asc())
+        select(WorkspaceMember).where(WorkspaceMember.user_id == user.id).order_by(WorkspaceMember.id.asc())
     )
     if member:
         if user.default_workspace_id != member.workspace_id:
