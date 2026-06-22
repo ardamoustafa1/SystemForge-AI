@@ -1,20 +1,23 @@
 # Contributing to SystemForge AI
 
-Katkilariniz için tesekkürler. Bu doküman, katkilarin hizli ve sorunsuz sekilde merge edilmesi için temel kurallari tanimlar.
+Thanks for helping improve SystemForge AI. This guide keeps contributions easy to review, reproduce, and merge.
 
-## 1) Branch and PR Flow
+## 1. Find a contribution
 
-- `main/master` üzerine dogrudan commit atmayin.
-- Her degisiklik için feature branch acin:
+- Start with [Good First Issues](docs/GOOD_FIRST_ISSUES.md).
+- Check the GitHub issue templates before opening a new report.
+- For architectural changes, open an issue or ADR proposal before a large implementation.
+
+## 2. Branch and PR flow
+
+- Do not commit directly to `main` or `master`.
+- Use a focused branch:
   - `feat/<short-topic>`
   - `fix/<short-topic>`
   - `docs/<short-topic>`
-- PR aciklamasinda su 3 basligi doldurun:
-  - Ne degisti?
-  - Neden degisti?
-  - Nasil test edildi?
+- Complete the pull request template, including what changed, why, and how it was tested.
 
-## 2) Development Setup
+## 3. Development setup
 
 ```bash
 cp .env.example .env
@@ -27,7 +30,7 @@ Lokal backend:
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
@@ -36,60 +39,62 @@ Lokal frontend:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-## 3) Required Quality Checks
+## 4. Required quality checks
 
-PR öncesi minimum kontrol:
+Run before opening a pull request:
 
-- Backend:
-  - `pytest tests -q`
-- Frontend:
-  - `npm run build`
-  - `npm run test`
-  - `npm run test:e2e` (mümkünse)
+```bash
+ruff check backend/app backend/tests
+pytest backend/tests -q
 
-CI pipeline su adimlari kosar:
+cd frontend
+npm run lint
+npx tsc --noEmit
+npm run test
+npm run build
+```
 
-- Backend lint (`ruff`)
-- Backend typecheck (`pyre`)
-- Backend Docker testleri
-- Frontend type/build/E2E
-- Security dependency audit
+For user-visible flows, also run:
 
-## 4) Code Style and Scope
+```bash
+cd frontend
+npm run test:e2e
+```
 
-- Degisiklikleri küçük ve odakli tutun.
-- Ilgisiz refactor veya formatting degisikliklerini ayni PR'a eklemeyin.
-- API kontrat degisikliginde endpoint docs/README güncellemelerini ekleyin.
-- Migration gerekiyorsa Alembic migration dosyasi ekleyin.
+## 5. Code style and scope
 
-## 5) Security and Secrets
+- Keep changes small and focused.
+- Do not mix unrelated refactors or formatting into the same pull request.
+- Update API docs and tests when a contract changes.
+- Add an Alembic migration for every schema change.
+- Preserve workspace isolation and authorization checks in every data path.
 
-- Secret dosyalarini veya kimlik bilgilerini commit etmeyin.
-- `.env` degerlerini repository'ye eklemeyin.
-- Güvenlik açigi bildirimi için `SECURITY.md` akisini kullanin.
+## 6. Security and secrets
 
-## 6) Commit Message Guidance
+- Never commit secrets, credentials, or local `.env` values.
+- Follow [SECURITY.md](SECURITY.md) for private vulnerability reports.
+- Add regression tests for security fixes when disclosure timing allows.
 
-Önerilen format:
+## 7. Commit messages
 
 - `feat: add workspace budget alert endpoint`
 - `fix: prevent stale websocket reconnect loop`
 - `docs: expand production hardening checklist`
 
-## 7) Documentation Expectations
+Conventional commit prefixes drive semantic release automation.
 
-Asagidaki durumlarda dokümantasyon güncellemesi beklenir:
+## 8. Documentation expectations
 
-- Yeni endpoint/service/worker eklendiyse
-- Env variable eklendiyse veya default degistiyse
-- Davranissal degisiklik (user-facing) varsa
+Update documentation when you add an endpoint, service, worker, environment variable, migration step, or user-visible behavior.
 
-Minimum güncellenecek dosyalar:
+Release-impacting changes should update:
 
-- `README.md` (gerekiyorsa `README.en.md`)
-- `docs/` altindaki ilgili tasarim/güvenlik belgeleri
-- `CHANGELOG.md` (release etkili degisikliklerde)
+- `README.md` when setup or product behavior changes.
+- The relevant file under `docs/` or `ops/`.
+- `CHANGELOG.md`.
+
+Maintainers should also follow [docs/MAINTAINER_GUIDE.md](docs/MAINTAINER_GUIDE.md).
