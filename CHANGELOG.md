@@ -1,42 +1,41 @@
 # Changelog
 
-Bu dosya projedeki önemli degisiklikleri takip etmek için tutulur.
+All notable changes to this project will be documented in this file.
 
-Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)  
-Versioning: [Semantic Versioning](https://semver.org/)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
 ### Added
-- README kapsamli sekilde yeniden düzenlendi (mimari, servis manifesti, full env referansi, runbook, hardening checklist).
-- `README.en.md` eklendi.
-- `CONTRIBUTING.md` eklendi.
-- Rozetler, ADR index ve changelog politikasi README'ye eklendi.
-- Star-focused GitHub README vitrini eklendi: product positioning, screenshots, quick demo, architecture, showcase, release and contributor links.
-- Local Docker demo seed script'i eklendi (`backend/scripts/seed_demo.py`).
-- Docker Compose demo seed servisi eklendi (`backend-demo-seed`).
-- Demo credentials ve showcase design seed env degiskenleri `.env.example` içine eklendi.
-- `docs/ARCHITECTURE.md`, `docs/DEMO_SCRIPT.md`, `docs/SHOWCASE_EXAMPLES.md`, `docs/RELEASE_PROCESS.md`, `docs/GOOD_FIRST_ISSUES.md`, `docs/MAINTAINER_GUIDE.md` eklendi.
-- README görselleri için logo ve product screenshot assetleri eklendi.
-- Docker demo üzerinden doğrulanmış dashboard ve architecture review görselleri eklendi.
-- `examples/` altına gerçek Docker Compose, Terraform, Kubernetes ve architecture showcase dosyalari eklendi.
-- Release workflow'una Cosign keyless imza, SBOM/provenance, Helm paketi ve checksum üretimi eklendi.
+- Extensively reorganized README (architecture, service manifest, full env reference, runbook, hardening checklist).
+- Added `CONTRIBUTING.md`.
+- Added badges, ADR index, and changelog policy to README.
+- Added star-focused GitHub README showcase: product positioning, screenshots, quick demo, architecture, showcase, release and contributor links.
+- Added local Docker demo seed script (`backend/scripts/seed_demo.py`).
+- Added Docker Compose demo seed service (`backend-demo-seed`).
+- Added demo credentials and showcase design seed env variables to `.env.example`.
+- Added `docs/ARCHITECTURE.md`, `docs/DEMO_SCRIPT.md`, `docs/SHOWCASE_EXAMPLES.md`, `docs/RELEASE_PROCESS.md`, `docs/GOOD_FIRST_ISSUES.md`, `docs/MAINTAINER_GUIDE.md`.
+- Added logo and product screenshot assets for README visuals.
+- Added verified dashboard and architecture review screenshots from the Docker demo.
+- Added concrete Docker Compose, Terraform, Kubernetes, and architecture showcase files under `examples/`.
+- Added Cosign keyless signature, SBOM/provenance, Helm package, and checksum generation to the release workflow.
 
 ### Changed
-- README bilgi mimarisi profesyonel dokümantasyon formatina getirildi.
-- `docs/QUICK_START.md` seeded demo akisi ile güncellendi.
-- `docs/LOAD_TEST_REPORT.md` release-quality benchmark kanit formatina çevrildi.
-- `ROADMAP.md` gerçekçi release gate durumunu yansitacak sekilde güncellendi.
-- Frontend API erisimi same-origin `/api` proxy üzerinden çalisacak sekilde güncellendi.
-- Frontend Docker kurulumu Node 22 Alpine üzerinde deterministik `npm ci` akışına geçirildi.
+- Refactored README information architecture into a professional documentation format.
+- Updated `docs/QUICK_START.md` with the seeded demo flow.
+- Converted `docs/LOAD_TEST_REPORT.md` into a release-quality benchmark evidence format.
+- Updated `ROADMAP.md` to reflect a realistic release gate status.
+- Updated frontend API access to work through a same-origin `/api` proxy.
+- Migrated frontend Docker setup to a deterministic `npm ci` flow on Node 22 Alpine.
 
 ### Fixed
-- README'deki kirik/missing logo ve demo görsel referanslari giderildi.
-- API key metadata schema drift'i yeni Alembic migration ile giderildi.
-- FastAPI router uyumsuzlugu nedeniyle tüm istekleri 500'e düsüren metrics middleware kaldirildi.
-- Docker backend test fixture'lari güncel şemaya uyarlandi; 64 testin tamami geçiyor.
+- Fixed broken/missing logo and demo image references in README.
+- Fixed API key metadata schema drift with a new Alembic migration.
+- Removed metrics middleware that caused all requests to drop to 500 due to a FastAPI router incompatibility.
+- Adapted Docker backend test fixtures to the current schema; all 64 tests now pass.
 
 ### Security
-- Production hardening checklist dokümana eklendi.
-- Prometheus metrics endpoint token korumali hale getirildi.
-- Frontend dependency audit sonucu 0 vulnerability seviyesine indirildi.
+- Added a production hardening checklist to the documentation.
+- Secured the Prometheus metrics endpoint with a token.
+- Reduced frontend dependency audit results to 0 vulnerabilities.
