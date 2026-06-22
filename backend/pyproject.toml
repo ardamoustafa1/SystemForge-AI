@@ -17,7 +17,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "redis==5.2.1",
     "httpx==0.28.1",
-    "fpdf2==2.8.2",
+    "fpdf2==2.8.7",
     "alembic==1.14.0",
     "sentry-sdk[fastapi]==2.19.2",
     "opentelemetry-sdk>=1.25.0",
