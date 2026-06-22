@@ -9,6 +9,7 @@ image:
 
 env:
   jwtSecret: "" # Must be injected via --set or external secret
+  # IMPORTANT: Replace systemforge.local with your actual production domain
   frontendPublicApiUrl: "https://systemforge.local/api"
   publicAppUrl: "https://systemforge.local"
   openaiApiKey: ""
@@ -35,6 +36,32 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
+
+workers:
+  generation:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  export:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  outbox:
+    replicas: 1
+  delivery:
+    replicas: 2
+  notification:
+    replicas: 1
 
 ingress:
   enabled: true
