@@ -29,6 +29,16 @@ def _enforce_security_baseline() -> None:
         raise RuntimeError("Insecure JWT secret for non-development environment")
     if not settings.cookie_secure:
         raise RuntimeError("cookie_secure must be true in non-development environments")
+    
+    if settings.notification_provider_mode == "mock":
+        import logging
+        logger = logging.getLogger("systemforge.security")
+        logger.warning(
+            "========================================================================\n"
+            "SECURITY WARNING: Running in production with notification_provider_mode='mock'.\n"
+            "Notifications will NOT be sent out to actual users.\n"
+            "========================================================================"
+        )
 
 
 _enforce_security_baseline()
@@ -37,7 +47,7 @@ if settings.sentry_dsn:
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
         environment=settings.app_env,
-        traces_sample_rate=1.0,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
     )
 
 app = FastAPI(title=settings.app_name, lifespan=app_lifespan)
@@ -52,8 +62,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Accept", "Accept-Language", "Content-Language", "Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "x-request-id"],
 )
 
 
