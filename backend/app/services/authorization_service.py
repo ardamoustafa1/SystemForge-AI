@@ -17,4 +17,3 @@ def ensure_design_write_access(member: WorkspaceMember) -> None:
 def ensure_design_share_access(member: WorkspaceMember) -> None:
     if member.role == RoleEnum.viewer:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Viewer role cannot manage share settings")
-
