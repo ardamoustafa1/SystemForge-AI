@@ -1,4 +1,5 @@
 """Workspace API endpoints."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request, status, Header
@@ -41,6 +42,7 @@ router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
 # ─────────────────────── workspace CRUD ─────────────────────────────────────
 
+
 @router.get("", response_model=list[WorkspaceSummary])
 def list_workspaces(
     db: Session = Depends(get_db),
@@ -58,11 +60,14 @@ async def create_workspace_route(
     user: User = Depends(get_current_user),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
-    client_ip = http_request.client.host if http_request.client else "unknown"
     await enforce_rate_limit(scope="workspace-create", identifier=str(user.id), limit=10, window_seconds=3600)
-    await enforce_idempotency(scope="workspace-create", owner_key=str(user.id), idempotency_key=idempotency_key, ttl_seconds=600)
+    await enforce_idempotency(
+        scope="workspace-create", owner_key=str(user.id), idempotency_key=idempotency_key, ttl_seconds=600
+    )
     res = create_workspace(db=db, user=user, name=payload.name)
-    await log_security_audit("workspace.create", actor_user_id=user.id, workspace_id=res["workspace"].id, metadata={"name": payload.name})
+    await log_security_audit(
+        "workspace.create", actor_user_id=user.id, workspace_id=res["workspace"].id, metadata={"name": payload.name}
+    )
     return res
 
 
@@ -86,7 +91,9 @@ async def update_workspace_route(
 ):
     await enforce_idempotency("workspace-update", f"{user.id}:{workspace_id}", idempotency_key, 300)
     res = update_workspace(db=db, user=user, workspace_id=workspace_id, name=payload.name)
-    await log_security_audit("workspace.update", actor_user_id=user.id, workspace_id=workspace_id, metadata={"name": payload.name})
+    await log_security_audit(
+        "workspace.update", actor_user_id=user.id, workspace_id=workspace_id, metadata={"name": payload.name}
+    )
     return res
 
 
@@ -145,12 +152,16 @@ async def update_budget(
         "workspace.budget.update",
         actor_user_id=user.id,
         workspace_id=workspace_id,
-        metadata={"monthly_token_budget": payload.monthly_token_budget, "budget_alert_threshold_pct": payload.budget_alert_threshold_pct},
+        metadata={
+            "monthly_token_budget": payload.monthly_token_budget,
+            "budget_alert_threshold_pct": payload.budget_alert_threshold_pct,
+        },
     )
     return res
 
 
 # ─────────────────────── members ─────────────────────────────────────────────
+
 
 @router.post("/{workspace_id}/members", response_model=WorkspaceMemberOut, status_code=status.HTTP_201_CREATED)
 async def invite_member_route(
@@ -163,7 +174,12 @@ async def invite_member_route(
 ):
     await enforce_idempotency("workspace-invite-member", f"{user.id}:{workspace_id}", idempotency_key, 600)
     res = invite_member(db=db, actor=user, workspace_id=workspace_id, email=payload.email, role=RoleEnum(payload.role))
-    await log_security_audit("workspace.member.invite", actor_user_id=user.id, workspace_id=workspace_id, metadata={"email": payload.email, "role": payload.role})
+    await log_security_audit(
+        "workspace.member.invite",
+        actor_user_id=user.id,
+        workspace_id=workspace_id,
+        metadata={"email": payload.email, "role": payload.role},
+    )
     return res
 
 
@@ -177,9 +193,20 @@ def update_role_route(
     user: User = Depends(get_current_user),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
-    run_async(enforce_idempotency("workspace-role-update", f"{user.id}:{workspace_id}:{member_id}", idempotency_key, 180))
-    res = update_member_role(db=db, actor=user, workspace_id=workspace_id, member_id=member_id, role=RoleEnum(payload.role))
-    run_async(log_security_audit("workspace.member.role_update", actor_user_id=user.id, workspace_id=workspace_id, metadata={"member_id": member_id, "role": payload.role}))
+    run_async(
+        enforce_idempotency("workspace-role-update", f"{user.id}:{workspace_id}:{member_id}", idempotency_key, 180)
+    )
+    res = update_member_role(
+        db=db, actor=user, workspace_id=workspace_id, member_id=member_id, role=RoleEnum(payload.role)
+    )
+    run_async(
+        log_security_audit(
+            "workspace.member.role_update",
+            actor_user_id=user.id,
+            workspace_id=workspace_id,
+            metadata={"member_id": member_id, "role": payload.role},
+        )
+    )
     return res
 
 
@@ -192,6 +219,15 @@ def remove_member_route(
     user: User = Depends(get_current_user),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
-    run_async(enforce_idempotency("workspace-member-remove", f"{user.id}:{workspace_id}:{member_id}", idempotency_key, 180))
+    run_async(
+        enforce_idempotency("workspace-member-remove", f"{user.id}:{workspace_id}:{member_id}", idempotency_key, 180)
+    )
     remove_member(db=db, actor=user, workspace_id=workspace_id, member_id=member_id)
-    run_async(log_security_audit("workspace.member.remove", actor_user_id=user.id, workspace_id=workspace_id, metadata={"member_id": member_id}))
+    run_async(
+        log_security_audit(
+            "workspace.member.remove",
+            actor_user_id=user.id,
+            workspace_id=workspace_id,
+            metadata={"member_id": member_id},
+        )
+    )
