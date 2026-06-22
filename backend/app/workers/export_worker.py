@@ -85,4 +85,3 @@ class ExportWorker:
                 await self._process_event(event_id, fields)
                 processed += 1
         return processed
-
