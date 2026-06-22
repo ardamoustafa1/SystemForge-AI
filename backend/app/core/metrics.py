@@ -13,7 +13,7 @@ _worker_retry_buckets = defaultdict(int)
 
 
 def observe_request(path: str, method: str, status_code: int, elapsed_ms: int) -> None:
-    key = f'{method} {path}'
+    key = f"{method} {path}"
     with _lock:
         _request_count[key] += 1
         _request_latency_sum_ms[key] += float(elapsed_ms)
@@ -98,4 +98,3 @@ def observe_worker_retry(worker: str, retry_count: int) -> None:
         bucket = "6+"
     with _lock:
         _worker_retry_buckets[f"{worker} {bucket}"] += 1
-
