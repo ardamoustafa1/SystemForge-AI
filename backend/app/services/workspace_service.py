@@ -1,4 +1,5 @@
 """Workspace CRUD service – all business logic lives here."""
+
 from __future__ import annotations
 
 from fastapi import HTTPException, status
@@ -10,10 +11,10 @@ from app.models import User, Workspace, WorkspaceMember, RoleEnum
 
 # ───────────────────────────── helpers ─────────────────────────────────────
 
+
 def _get_member_or_404(db: Session, workspace_id: int, user_id: int) -> WorkspaceMember:
     member = db.scalar(
-        select(WorkspaceMember)
-        .where(WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == user_id)
+        select(WorkspaceMember).where(WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == user_id)
     )
     if not member:
         raise HTTPException(status_code=404, detail="Workspace not found or access denied")
@@ -29,6 +30,7 @@ def _require_workspace_role(member: WorkspaceMember, *roles: RoleEnum) -> None:
 
 
 # ───────────────────────────── queries ─────────────────────────────────────
+
 
 def list_workspaces_for_user(db: Session, user: User) -> list[dict]:
     rows = db.execute(
@@ -50,9 +52,7 @@ def list_workspaces_for_user(db: Session, user: User) -> list[dict]:
 def get_workspace_details(db: Session, user: User, workspace_id: int) -> dict:
     member = _get_member_or_404(db, workspace_id, user.id)
     ws = member.workspace
-    members = db.scalars(
-        select(WorkspaceMember).where(WorkspaceMember.workspace_id == ws.id)
-    ).all()
+    members = db.scalars(select(WorkspaceMember).where(WorkspaceMember.workspace_id == ws.id)).all()
     member_out = [
         {
             "id": m.id,
@@ -68,6 +68,7 @@ def get_workspace_details(db: Session, user: User, workspace_id: int) -> dict:
 
 
 # ───────────────────────────── mutations ───────────────────────────────────
+
 
 def create_workspace(db: Session, user: User, name: str) -> dict:
     ws = Workspace(name=name.strip())
@@ -122,8 +123,9 @@ def invite_member(db: Session, actor: User, workspace_id: int, email: str, role:
         raise HTTPException(status_code=404, detail="No user found with that email")
 
     existing = db.scalar(
-        select(WorkspaceMember)
-        .where(WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == target_user.id)
+        select(WorkspaceMember).where(
+            WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == target_user.id
+        )
     )
     if existing:
         raise HTTPException(status_code=409, detail="User is already a member of this workspace")
@@ -153,8 +155,7 @@ def update_member_role(db: Session, actor: User, workspace_id: int, member_id: i
     parsed_role = role
 
     target = db.scalar(
-        select(WorkspaceMember)
-        .where(WorkspaceMember.id == member_id, WorkspaceMember.workspace_id == workspace_id)
+        select(WorkspaceMember).where(WorkspaceMember.id == member_id, WorkspaceMember.workspace_id == workspace_id)
     )
     if not target:
         raise HTTPException(status_code=404, detail="Member not found")
@@ -179,8 +180,7 @@ def remove_member(db: Session, actor: User, workspace_id: int, member_id: int) -
     _require_workspace_role(actor_member, RoleEnum.admin)
 
     target = db.scalar(
-        select(WorkspaceMember)
-        .where(WorkspaceMember.id == member_id, WorkspaceMember.workspace_id == workspace_id)
+        select(WorkspaceMember).where(WorkspaceMember.id == member_id, WorkspaceMember.workspace_id == workspace_id)
     )
     if not target:
         raise HTTPException(status_code=404, detail="Member not found")
