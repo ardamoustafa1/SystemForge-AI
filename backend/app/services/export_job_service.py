@@ -66,7 +66,13 @@ async def enqueue_export_job(
         {
             "type": "export.generate",
             "payload_json": json.dumps(
-                {"job_id": job_id, "design_title": design_title, "format": export_format, "input": design_input.model_dump(), "output": design_output.model_dump()}
+                {
+                    "job_id": job_id,
+                    "design_title": design_title,
+                    "format": export_format,
+                    "input": design_input.model_dump(),
+                    "output": design_output.model_dump(),
+                }
             ),
         },
         maxlen=get_settings().stream_maxlen_approx,
@@ -113,6 +119,7 @@ async def process_export_job(
                 output=design_output,
                 export_format="markdown",
             )
+
             content_b64 = base64.b64encode(markdown.encode("utf-8")).decode("ascii")
             mime = "text/markdown; charset=utf-8"
             filename = f"{design_title[:60] or 'design'}-systemforge.md"
@@ -159,4 +166,3 @@ async def get_export_job(job_id: str) -> dict | None:
     if isinstance(raw, bytes):
         raw = raw.decode("utf-8")
     return json.loads(raw)
-
