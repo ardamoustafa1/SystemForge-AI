@@ -8,6 +8,7 @@ from app.core.rate_limiter import clear_rate_limit, enforce_rate_limit
 from app.db.session import get_db
 from app.models import User, RefreshTokenSession
 from app.schemas.auth import AuthResponse, CurrentUserResponse, LoginRequest, RegisterRequest
+from pydantic import BaseModel
 from app.services.security_audit_service import log_security_audit
 from app.core.async_bridge import run_async
 
@@ -69,11 +70,15 @@ def logout(
     db: Session = Depends(get_db),
 ):
     user.token_version = int(user.token_version) + 1
-    db.query(RefreshTokenSession).filter(RefreshTokenSession.user_id == user.id, RefreshTokenSession.is_revoked.is_(False)).update(
-        {"is_revoked": True}
-    )
+    db.query(RefreshTokenSession).filter(
+        RefreshTokenSession.user_id == user.id, RefreshTokenSession.is_revoked.is_(False)
+    ).update({"is_revoked": True})
     db.commit()
-    run_async(log_security_audit("auth.logout_all_sessions", actor_user_id=user.id, workspace_id=user.default_workspace_id, metadata={}))
+    run_async(
+        log_security_audit(
+            "auth.logout_all_sessions", actor_user_id=user.id, workspace_id=user.default_workspace_id, metadata={}
+        )
+    )
     settings = get_settings()
     response.delete_cookie(settings.auth_cookie_name, path="/")
     response.delete_cookie(settings.refresh_cookie_name, path="/")
@@ -148,5 +153,212 @@ def revoke_user_session(
     db: Session = Depends(get_db),
 ):
     revoke_session(db, user, session_id)
-    run_async(log_security_audit("auth.revoke_session", actor_user_id=user.id, workspace_id=user.default_workspace_id, metadata={"session_id": session_id}))
+    run_async(
+        log_security_audit(
+            "auth.revoke_session",
+            actor_user_id=user.id,
+            workspace_id=user.default_workspace_id,
+            metadata={"session_id": session_id},
+        )
+    )
     return {"ok": True}
+
+
+class GenerateApiKeyResponse(BaseModel):
+    api_key: str
+
+
+@router.post("/api-keys", response_model=GenerateApiKeyResponse)
+async def generate_api_key(
+    request: Request,
+    _: None = Depends(enforce_csrf),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.core.rate_limiter import enforce_rate_limit
+    client_ip = request.client.host if request.client else "unknown"
+    await enforce_rate_limit(scope="auth-apikey-generate", identifier=str(user.id), limit=5, window_seconds=86400)
+    
+    import secrets
+    from datetime import datetime, timezone
+    from passlib.hash import bcrypt
+    from app.models.design import UserSettings
+
+    api_key = f"sf_{secrets.token_urlsafe(32)}"
+    api_key_hash = bcrypt.hash(api_key)
+    last4 = api_key[-4:]
+
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
+    if not settings:
+        settings = UserSettings(user_id=user.id)
+        db.add(settings)
+
+    settings.api_key_hash = api_key_hash
+    settings.api_key_last4 = last4
+    settings.api_key_created_at = datetime.now(timezone.utc)
+    settings.api_key_revoked_at = None
+    db.commit()
+
+    run_async(
+        log_security_audit(
+            "auth.generate_api_key",
+            actor_user_id=user.id,
+            workspace_id=user.default_workspace_id,
+            metadata={"last4": last4},
+        )
+    )
+    return GenerateApiKeyResponse(api_key=api_key)
+
+
+class ApiKeyStatusResponse(BaseModel):
+    last4: str | None
+    created_at: str | None
+    revoked_at: str | None
+
+
+@router.get("/api-keys", response_model=ApiKeyStatusResponse)
+def get_api_key_status(
+    _: None = Depends(enforce_csrf),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.design import UserSettings
+
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
+    if not settings or not settings.api_key_last4:
+        return ApiKeyStatusResponse(last4=None, created_at=None, revoked_at=None)
+
+    return ApiKeyStatusResponse(
+        last4=settings.api_key_last4,
+        created_at=settings.api_key_created_at.isoformat() if settings.api_key_created_at else None,
+        revoked_at=settings.api_key_revoked_at.isoformat() if settings.api_key_revoked_at else None,
+    )
+
+
+@router.delete("/api-keys")
+def revoke_api_key(
+    _: None = Depends(enforce_csrf),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from datetime import datetime, timezone
+    from app.models.design import UserSettings
+
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
+    if settings and settings.api_key_hash:
+        settings.api_key_revoked_at = datetime.now(timezone.utc)
+        db.commit()
+        run_async(
+            log_security_audit(
+                "auth.revoke_api_key",
+                actor_user_id=user.id,
+                workspace_id=user.default_workspace_id,
+                metadata={"last4": settings.api_key_last4},
+            )
+        )
+    return {"ok": True}
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+
+
+@router.post("/reset-password")
+async def reset_password(payload: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    from app.core.rate_limiter import enforce_rate_limit
+    client_ip = request.client.host if request.client else "unknown"
+    await enforce_rate_limit(scope="auth-password-reset", identifier=client_ip, limit=3, window_seconds=3600)
+    
+    import secrets
+    import logging
+    from app.core.redis import get_redis_client
+
+    logger = logging.getLogger("systemforge.auth")
+    user = db.query(User).filter(User.email == payload.email, User.is_active.is_(True)).first()
+    if user:
+        token = secrets.token_urlsafe(32)
+        redis_client = get_redis_client()
+        await redis_client.setex(f"pwd_reset:{token}", 3600, user.id)
+        logger.info(
+            f"\n*** SIMULATED EMAIL ***\nTo: {payload.email}\nSubject: Password Reset\nLink: https://systemforge.local/reset-password?token={token}\n***\n"
+        )
+
+    return {"ok": True, "message": "If the email exists, a password reset link has been sent."}
+
+
+class ResetPasswordConfirmRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/reset-password/confirm")
+async def reset_password_confirm(payload: ResetPasswordConfirmRequest, request: Request, db: Session = Depends(get_db)):
+    from app.core.rate_limiter import enforce_rate_limit
+    client_ip = request.client.host if request.client else "unknown"
+    await enforce_rate_limit(scope="auth-password-reset-confirm", identifier=client_ip, limit=5, window_seconds=3600)
+    
+    from app.core.redis import get_redis_client
+    from passlib.hash import bcrypt
+    import re
+
+    if (
+        len(payload.new_password) < 8
+        or not re.search(r"[A-Za-z]", payload.new_password)
+        or not re.search(r"[0-9]", payload.new_password)
+    ):
+        raise HTTPException(
+            status_code=400, detail="Password must be at least 8 characters and contain letters and numbers"
+        )
+
+    redis_client = get_redis_client()
+    user_id_str = await redis_client.get(f"pwd_reset:{payload.token}")
+    if not user_id_str:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    user = db.query(User).filter(User.id == int(user_id_str)).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+
+    user.password_hash = bcrypt.hash(payload.new_password)
+    user.token_version = int(user.token_version) + 1
+    db.commit()
+
+    await redis_client.delete(f"pwd_reset:{payload.token}")
+    run_async(
+        log_security_audit(
+            "auth.password_reset", actor_user_id=user.id, workspace_id=user.default_workspace_id, metadata={}
+        )
+    )
+
+    return {"ok": True, "message": "Password has been successfully reset"}
+
+
+@router.delete("/account")
+async def delete_account(
+    payload: LoginRequest,
+    request: Request,
+    _: None = Depends(enforce_csrf),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.core.rate_limiter import enforce_rate_limit
+    client_ip = request.client.host if request.client else "unknown"
+    await enforce_rate_limit(scope="auth-delete-account", identifier=str(user.id), limit=3, window_seconds=86400)
+    
+    from passlib.hash import bcrypt
+
+    if not bcrypt.verify(payload.password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Incorrect password confirmation")
+
+    user.is_active = False
+    user.token_version = int(user.token_version) + 1
+    db.commit()
+    run_async(
+        log_security_audit(
+            "auth.account_deleted",
+            actor_user_id=user.id,
+            workspace_id=user.default_workspace_id,
+            metadata={"action": "soft_delete_gdpr"},
+        )
+    )
+    return {"ok": True, "message": "Account scheduled for deletion"}
