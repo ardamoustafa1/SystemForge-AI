@@ -70,7 +70,9 @@ def _estimate_monthly_cost_baseline(inp: DesignInputPayload) -> tuple[int, int, 
     return monthly_min, monthly_max, breakdown
 
 
-def build_fallback_output(input_payload: DesignInputPayload, scale_stance: ScaleStance = "balanced") -> DesignOutputPayload:
+def build_fallback_output(
+    input_payload: DesignInputPayload, scale_stance: ScaleStance = "balanced"
+) -> DesignOutputPayload:
     """
     Deterministic, schema-safe output when no LLM is configured or the provider fails.
     Content is parameterized from DesignInputPayload so different projects read differently.
@@ -94,9 +96,13 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
     else:
         functional_requirements.append("Stable request/response APIs with clear versioning and backward compatibility")
     if inp.data_sensitivity in {"high", "critical"}:
-        functional_requirements.append("Data protection: encryption in transit and at rest, access logging, and least-privilege operations")
+        functional_requirements.append(
+            "Data protection: encryption in transit and at rest, access logging, and least-privilege operations"
+        )
     else:
-        functional_requirements.append("Operational visibility: structured logs, metrics, and traceability for primary flows")
+        functional_requirements.append(
+            "Operational visibility: structured logs, metrics, and traceability for primary flows"
+        )
 
     # --- Non-functional: tie to traffic, deployment, budget
     nfr = [
@@ -106,11 +112,17 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
     if inp.deployment_scope == "single-region":
         nfr.append("Optimize for regional redundancy within one region before expanding topology")
     elif inp.deployment_scope == "multi-region":
-        nfr.append("Define replication strategy (leader/follower or multi-primary), target RPO/RTO, and explicit failover runbook across regions")
-        nfr.append("Use latency and health-aware geo routing to steer clients to nearest healthy region with deterministic failback")
+        nfr.append(
+            "Define replication strategy (leader/follower or multi-primary), target RPO/RTO, and explicit failover runbook across regions"
+        )
+        nfr.append(
+            "Use latency and health-aware geo routing to steer clients to nearest healthy region with deterministic failback"
+        )
     else:
         nfr.append("Global UX: latency budgets, edge caching where applicable, and data residency constraints")
-        nfr.append("Use geo routing with residency constraints, cross-region replication policy, and automated failover choreography")
+        nfr.append(
+            "Use geo routing with residency constraints, cross-region replication policy, and automated failover choreography"
+        )
 
     if inp.budget_sensitivity == "high":
         nfr.append("Cost discipline: right-size managed services, autoscaling guardrails, and chargeback visibility")
@@ -183,7 +195,9 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
         "Protect the database: connection pools, timeouts, and bulkhead patterns for background consumers",
     ]
     if inp.deployment_scope in {"multi-region", "global"}:
-        reliability_and_failure_points.append("Document cross-region failover flow: detection -> traffic shift -> replica promotion -> consistency verification -> controlled failback")
+        reliability_and_failure_points.append(
+            "Document cross-region failover flow: detection -> traffic shift -> replica promotion -> consistency verification -> controlled failback"
+        )
 
     security_considerations = [
         f"Data sensitivity is {inp.data_sensitivity}: align retention, encryption, and access reviews accordingly",
@@ -203,9 +217,13 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
         "Modular monolith or well-bounded services: split only on team or load seams supported by metrics",
     ]
     if stack_bits:
-        tradeoff_decisions.append(f"Stack fidelity: honor preferred components ({', '.join(stack_bits)}) vs hiring/operational reality")
+        tradeoff_decisions.append(
+            f"Stack fidelity: honor preferred components ({', '.join(stack_bits)}) vs hiring/operational reality"
+        )
     else:
-        tradeoff_decisions.append("Document vs flexible schema: prefer constraints and migrations until access patterns stabilize")
+        tradeoff_decisions.append(
+            "Document vs flexible schema: prefer constraints and migrations until access patterns stabilize"
+        )
 
     phases = [
         f"MVP for {inp.project_type}: core flows covering {_truncate(problem, 100)}",
@@ -223,7 +241,12 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
         checklist.insert(2, "Realtime soak test: reconnect storms, slow consumers, and ordering guarantees")
 
     # --- Scorecard: deterministic variation + domain bias
-    sc = {name: _score_dimension(seed, i) for i, name in enumerate(["scalability", "reliability", "security", "maintainability", "cost_efficiency", "simplicity"])}
+    sc = {
+        name: _score_dimension(seed, i)
+        for i, name in enumerate(
+            ["scalability", "reliability", "security", "maintainability", "cost_efficiency", "simplicity"]
+        )
+    }
     if inp.data_sensitivity in {"high", "critical"}:
         sc["security"] = min(10, sc["security"] + 1)
     if inp.budget_sensitivity == "high":
@@ -296,7 +319,9 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
     )
     monthly_min, monthly_max, cost_breakdown = _estimate_monthly_cost_baseline(inp)
     runtime_topology = RuntimeTopologySection(
-        architecture_style="Modular monolith with bounded runtime surfaces" if not inp.real_time_required else "Modular services with dedicated realtime gateway",
+        architecture_style="Modular monolith with bounded runtime surfaces"
+        if not inp.real_time_required
+        else "Modular services with dedicated realtime gateway",
         deployable_units=[
             "Edge/API gateway",
             "Core application service",
@@ -308,7 +333,11 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
         primary_runtime_paths=[
             "Synchronous user request path terminates at API/application boundary",
             "Heavy or retryable work is delegated to background workers via queue/outbox path",
-            *([] if not inp.real_time_required else ["Realtime connections terminate on WebSocket gateway and fan out through Redis-backed routing"]),
+            *(
+                []
+                if not inp.real_time_required
+                else ["Realtime connections terminate on WebSocket gateway and fan out through Redis-backed routing"]
+            ),
         ],
         stateful_components=[
             "Primary datastore for durable business state",
@@ -337,33 +366,51 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
         connection_lifecycle=[
             "Client connects to dedicated WebSocket gateway and authenticates session on connect",
             "Gateway maps socket -> user/session and refreshes presence heartbeat in Redis",
-        ] if inp.real_time_required else [],
+        ]
+        if inp.real_time_required
+        else [],
         fanout_strategy=[
             "Gateway publishes logical events into Redis-backed per-user or per-channel fanout streams",
             "Consumers push only authorized events to connected sockets",
-        ] if inp.real_time_required else [],
+        ]
+        if inp.real_time_required
+        else [],
         scaling_strategy=[
             "Run multiple WebSocket gateway replicas behind a load balancer",
             "Use Redis pub/sub or streams as cross-instance backplane so any node can fan out to any connection owner",
-        ] if inp.real_time_required else [],
-        sticky_session_strategy="Prefer no sticky sessions if Redis-backed socket ownership/presence is implemented; otherwise require short-lived stickiness at the load balancer." if inp.real_time_required else "",
-        pubsub_backplane="Redis pub/sub or Redis Streams for cross-node socket routing and fanout coordination." if inp.real_time_required else "",
+        ]
+        if inp.real_time_required
+        else [],
+        sticky_session_strategy="Prefer no sticky sessions if Redis-backed socket ownership/presence is implemented; otherwise require short-lived stickiness at the load balancer."
+        if inp.real_time_required
+        else "",
+        pubsub_backplane="Redis pub/sub or Redis Streams for cross-node socket routing and fanout coordination."
+        if inp.real_time_required
+        else "",
         channel_partitioning=[
             "Partition channels by workspace_id and logical room/channel id to keep fanout authorization local",
             "Separate high-fanout broadcast channels from low-volume presence/control channels",
-        ] if inp.real_time_required else [],
+        ]
+        if inp.real_time_required
+        else [],
         shard_strategy=[
             "Hash socket ownership by user_id or channel_id to spread active connections across gateway replicas",
             "Move hot channels to dedicated shards when fanout lag or CPU saturation appears",
-        ] if inp.real_time_required else [],
+        ]
+        if inp.real_time_required
+        else [],
         topic_design=[
             "Use logical topics such as presence.updated, message.created, notification.dispatch, and export.completed",
             "Keep domain events separate from transport-level socket delivery events",
-        ] if inp.real_time_required else [],
+        ]
+        if inp.real_time_required
+        else [],
         partition_keys=[
             "user_id for per-user fanout streams",
             "workspace_id:channel_id for room-scoped ordering and replay",
-        ] if inp.real_time_required else [],
+        ]
+        if inp.real_time_required
+        else [],
     )
     ai_architecture = AIArchitectureSection(
         request_guardrails=[
@@ -416,22 +463,47 @@ def build_fallback_output(input_payload: DesignInputPayload, scale_stance: Scale
         streaming_protocols=[
             "Use HLS for broad playback compatibility and CDN cacheability",
             "Use WebRTC only for low-latency instructor/interactor paths where sub-second latency matters",
-        ] if any(token in f'{inp.project_type} {inp.problem_statement}'.lower() for token in ["video", "stream", "live", "education", "lesson", "course"]) else [],
+        ]
+        if any(
+            token in f"{inp.project_type} {inp.problem_statement}".lower()
+            for token in ["video", "stream", "live", "education", "lesson", "course"]
+        )
+        else [],
         ingest_and_packaging=[
             "Ingest broadcaster stream through RTMP or WHIP gateway into packaging pipeline",
             "Package output into multi-bitrate HLS renditions with short segment duration for near-live playback",
-        ] if any(token in f'{inp.project_type} {inp.problem_statement}'.lower() for token in ["video", "stream", "live", "education", "lesson", "course"]) else [],
+        ]
+        if any(
+            token in f"{inp.project_type} {inp.problem_statement}".lower()
+            for token in ["video", "stream", "live", "education", "lesson", "course"]
+        )
+        else [],
         cdn_strategy=[
             "Push HLS manifests and segments through a CDN with regional edge caching",
             "Protect origin with signed URLs or tokenized playback access for private classes",
-        ] if any(token in f'{inp.project_type} {inp.problem_statement}'.lower() for token in ["video", "stream", "live", "education", "lesson", "course"]) else [],
+        ]
+        if any(
+            token in f"{inp.project_type} {inp.problem_statement}".lower()
+            for token in ["video", "stream", "live", "education", "lesson", "course"]
+        )
+        else [],
         adaptive_bitrate_strategy=[
             "Generate ABR ladder by source resolution and expected network conditions",
             "Tune player startup bitrate conservatively, then ramp based on bandwidth estimation and rebuffer ratio",
-        ] if any(token in f'{inp.project_type} {inp.problem_statement}'.lower() for token in ["video", "stream", "live", "education", "lesson", "course"]) else [],
+        ]
+        if any(
+            token in f"{inp.project_type} {inp.problem_statement}".lower()
+            for token in ["video", "stream", "live", "education", "lesson", "course"]
+        )
+        else [],
         realtime_interaction_sidecar=[
             "Keep chat, presence, polls, and reactions on a separate realtime sidecar instead of coupling them to media transport",
-        ] if any(token in f'{inp.project_type} {inp.problem_statement}'.lower() for token in ["video", "stream", "live", "education", "lesson", "course"]) else [],
+        ]
+        if any(
+            token in f"{inp.project_type} {inp.problem_statement}".lower()
+            for token in ["video", "stream", "live", "education", "lesson", "course"]
+        )
+        else [],
     )
     database_architecture = DatabaseArchitectureSection(
         primary_entities=[
