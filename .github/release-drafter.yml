@@ -8,12 +8,14 @@ categories:
   - title: '🐛 Bug Fixes'
     labels:
       - 'fix'
-      - 'bugfix'
       - 'bug'
   - title: '🧰 Maintenance'
-    label: 'chore'
+    labels:
+      - 'chore'
+      - 'refactor'
+      - 'dependencies'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 template: |
-  ## Changes
+  ## What's Changed
   
   $CHANGES
