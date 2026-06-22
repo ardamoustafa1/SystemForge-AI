@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, Header
+from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -11,13 +11,16 @@ from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/users/me/settings", tags=["settings"])
 
+
 class UserSettingsResponse(BaseModel):
     theme: str
     default_mode: str
 
+
 class UpdateSettingsRequest(BaseModel):
     theme: str | None = Field(default=None, max_length=20)
     default_mode: str | None = Field(default=None, max_length=20)
+
 
 @router.get("", response_model=UserSettingsResponse)
 async def get_settings(
@@ -58,3 +61,15 @@ async def update_settings(
     db.refresh(settings)
 
     return UserSettingsResponse(theme=settings.theme, default_mode=settings.default_mode)  # type: ignore
+
+
+@router.delete("")
+async def delete_account(
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_csrf),
+    user: User = Depends(get_current_user),
+):
+    # Soft delete or hard delete user
+    db.delete(user)
+    db.commit()
+    return {"ok": True, "message": "Account deleted successfully"}
