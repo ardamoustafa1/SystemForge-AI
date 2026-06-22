@@ -39,7 +39,9 @@ def register_user(payload: RegisterRequest, db: Session) -> CurrentUserResponse:
 
     db.commit()
     db.refresh(user)
-    return CurrentUserResponse(id=user.id, email=user.email, full_name=user.full_name, default_workspace_id=user.default_workspace_id)
+    return CurrentUserResponse(
+        id=user.id, email=user.email, full_name=user.full_name, default_workspace_id=user.default_workspace_id
+    )
 
 
 def _hash_refresh_token(token: str) -> str:
@@ -82,11 +84,15 @@ def login_user(payload: LoginRequest, db: Session) -> tuple[AuthResponse, str, s
     refresh_token = _issue_refresh_session(db=db, user=user)
     db.commit()
     settings = get_settings()
-    return AuthResponse(
-        user=CurrentUserResponse(id=user.id, email=user.email, full_name=user.full_name),
-        csrf_token=secrets.token_urlsafe(32),
-        expires_in_seconds=settings.jwt_exp_minutes * 60,
-    ), access_token, refresh_token
+    return (
+        AuthResponse(
+            user=CurrentUserResponse(id=user.id, email=user.email, full_name=user.full_name),
+            csrf_token=secrets.token_urlsafe(32),
+            expires_in_seconds=settings.jwt_exp_minutes * 60,
+        ),
+        access_token,
+        refresh_token,
+    )
 
 
 def rotate_refresh_token(db: Session, refresh_token: str) -> tuple[AuthResponse, str, str]:
@@ -111,7 +117,9 @@ def rotate_refresh_token(db: Session, refresh_token: str) -> tuple[AuthResponse,
     db.commit()
     return (
         AuthResponse(
-            user=CurrentUserResponse(id=user.id, email=user.email, full_name=user.full_name, default_workspace_id=user.default_workspace_id),
+            user=CurrentUserResponse(
+                id=user.id, email=user.email, full_name=user.full_name, default_workspace_id=user.default_workspace_id
+            ),
             csrf_token=secrets.token_urlsafe(32),
             expires_in_seconds=settings.jwt_exp_minutes * 60,
         ),
@@ -141,7 +149,9 @@ def list_active_sessions(db: Session, user: User) -> list[dict]:
 
 
 def revoke_session(db: Session, user: User, session_id: int) -> None:
-    row = db.scalar(select(RefreshTokenSession).where(RefreshTokenSession.id == session_id, RefreshTokenSession.user_id == user.id))
+    row = db.scalar(
+        select(RefreshTokenSession).where(RefreshTokenSession.id == session_id, RefreshTokenSession.user_id == user.id)
+    )
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     row.is_revoked = True
