@@ -14,9 +14,13 @@ class User(Base, TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    default_workspace_id: Mapped[int | None] = mapped_column(ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True)
+    default_workspace_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True
+    )
 
-    designs = relationship("Design", back_populates="owner", cascade="all, delete-orphan", foreign_keys="Design.owner_id")
+    designs = relationship(
+        "Design", back_populates="owner", cascade="all, delete-orphan", foreign_keys="Design.owner_id"
+    )
     settings = relationship("UserSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     workspaces = relationship("WorkspaceMember", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshTokenSession", back_populates="user", cascade="all, delete-orphan")
