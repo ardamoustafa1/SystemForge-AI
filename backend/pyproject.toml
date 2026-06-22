@@ -19,7 +19,7 @@ dependencies = [
     "httpx==0.28.1",
     "fpdf2==2.8.2",
     "alembic==1.14.0",
-    "sentry-sdk[fastapi]==2.19.2",
+    "sentry-sdk[fastapi]==2.63.0",
     "opentelemetry-sdk>=1.25.0",
     "opentelemetry-instrumentation-fastapi>=0.46b0",
     "opentelemetry-instrumentation-redis>=0.46b0",
