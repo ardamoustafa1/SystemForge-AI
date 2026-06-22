@@ -9,7 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
-from jose import JWTError, jwt
+import jwt
 from pydantic import ValidationError
 
 from app.core.config import get_settings
@@ -113,7 +113,7 @@ def _authenticate_websocket(websocket: WebSocket) -> User | None:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         user_id = int(payload.get("sub", "0"))
         token_version = int(payload.get("tv", 0))
-    except (JWTError, ValueError):
+    except (jwt.InvalidTokenError, ValueError):
         return None
     if user_id <= 0:
         return None
@@ -327,7 +327,9 @@ async def websocket_gateway(websocket: WebSocket) -> None:
                 # replay scope explicit and predictable.
                 if resume_payload.last_server_seq_by_conversation:
                     with SessionLocal() as db:
-                        for raw_conversation_id, last_seq in list(resume_payload.last_server_seq_by_conversation.items())[:50]:  # type: ignore
+                        for raw_conversation_id, last_seq in list(
+                            resume_payload.last_server_seq_by_conversation.items()
+                        )[:50]:  # type: ignore
                             try:
                                 conversation_id = int(raw_conversation_id)
                                 sync_result = build_sync_response(
@@ -669,14 +671,16 @@ async def websocket_gateway(websocket: WebSocket) -> None:
                                 f"{stream_prefix}:{member_id}",
                                 {
                                     "type": "typing.updated",
-                                    "payload_json": json.dumps({
-                                        "conversation_id": typing_payload.conversation_id,
-                                        "user_id": user.id,
-                                        "is_typing": event_type == "typing.started"
-                                    })
+                                    "payload_json": json.dumps(
+                                        {
+                                            "conversation_id": typing_payload.conversation_id,
+                                            "user_id": user.id,
+                                            "is_typing": event_type == "typing.started",
+                                        }
+                                    ),
                                 },
                                 maxlen=get_settings().stream_maxlen_approx,
-                                approximate=True
+                                approximate=True,
                             )
                         except Exception:
                             pass
