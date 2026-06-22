@@ -14,4 +14,3 @@ def run_async(coro: Any) -> Any:
             return loop.run_until_complete(coro)
         finally:
             loop.close()
-
