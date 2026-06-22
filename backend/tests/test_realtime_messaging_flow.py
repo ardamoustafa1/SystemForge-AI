@@ -16,7 +16,7 @@ from app.messaging.service import (
 from app.models.user import User
 from app.realtime.protocol import ClientEventEnvelope
 from app.realtime.protocol import SyncRequestPayload
-from conftest import TestingSessionLocal
+from tests.conftest import TestingSessionLocal
 
 
 def _seed_users_and_conversation() -> tuple[int, int, int]:
