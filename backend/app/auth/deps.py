@@ -22,7 +22,10 @@ def get_current_user(
         )
 
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        if settings.jwt_public_key and settings.jwt_algorithm == "RS256":
+            payload = jwt.decode(token, settings.jwt_public_key, algorithms=["RS256"])
+        else:
+            payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         user_id = int(payload.get("sub", "0"))
         token_version = int(payload.get("tv", 0))
     except (jwt.InvalidTokenError, ValueError):
