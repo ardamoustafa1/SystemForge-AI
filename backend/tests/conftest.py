@@ -14,6 +14,7 @@ os.environ["JWT_SECRET"] = "systemforge-test-secret-at-least-32-characters"
 os.environ.setdefault("OTEL_SDK_DISABLED", "true")
 # Deterministic PDF tests; no outbound Kroki calls.
 os.environ.setdefault("MERMAID_PDF_RENDER_ENABLED", "false")
+os.environ.setdefault("COOKIE_SECURE", "false")
 
 from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
