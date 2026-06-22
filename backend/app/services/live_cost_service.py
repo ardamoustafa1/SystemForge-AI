@@ -58,4 +58,3 @@ async def get_workspace_usage(workspace_id: int) -> dict | None:
     if isinstance(raw, bytes):
         raw = raw.decode("utf-8")
     return json.loads(raw)
-
