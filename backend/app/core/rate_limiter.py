@@ -29,6 +29,8 @@ async def enforce_rate_limit(scope: str, identifier: str, limit: int, window_sec
     except HTTPException:
         raise
     except Exception:
+        if get_settings().app_env.lower() not in {"development", "dev", "test", "testing"}:
+            raise RuntimeError("Redis is required for rate limiting in production")
         now = datetime.now(timezone.utc)
         current, expires_at = _memory_bucket.get(key, (0, now + timedelta(seconds=window_seconds)))
         if now >= expires_at:
@@ -82,6 +84,8 @@ async def enforce_usage_quota(
     except HTTPException:
         raise
     except Exception:
+        if get_settings().app_env.lower() not in {"development", "dev", "test", "testing"}:
+            raise RuntimeError("Redis is required for quota limiting in production")
         now = datetime.now(timezone.utc)
         current, expires_at = _memory_quota.get(key, (0, now + timedelta(seconds=window_seconds)))
         if now >= expires_at:
