@@ -17,8 +17,11 @@ services:
 
   redis:
     image: redis:7
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -30,6 +33,7 @@ services:
       context: ./backend
       target: runtime
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -63,6 +67,7 @@ services:
       target: runtime
     command: ["python", "-m", "app.workers.run_outbox_worker"]
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -78,6 +83,11 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "outbox"]
       interval: 30s
@@ -90,6 +100,7 @@ services:
       target: runtime
     command: ["python", "-m", "app.workers.run_delivery_worker"]
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -105,6 +116,11 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "delivery"]
       interval: 30s
@@ -117,6 +133,7 @@ services:
       target: runtime
     command: ["python", "-m", "app.workers.run_notification_worker"]
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -132,6 +149,11 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "notification"]
       interval: 30s
@@ -144,6 +166,7 @@ services:
       target: runtime
     command: ["python", "-m", "app.workers.run_generation_worker"]
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -159,6 +182,16 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "generation"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   backend-export-worker:
     build:
@@ -166,6 +199,7 @@ services:
       target: runtime
     command: ["python", "-m", "app.workers.run_export_worker"]
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -181,6 +215,11 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-m", "app.workers.healthcheck", "--worker", "export"]
       interval: 30s
@@ -193,6 +232,7 @@ services:
       context: ./backend
       target: test
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -211,6 +251,7 @@ services:
       target: runtime
     command: ["python", "-m", "scripts.seed_demo"]
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -236,6 +277,7 @@ services:
       target: runtime
     command: ["sh", "-lc", "/app/scripts/migrate.sh"]
     environment:
+      APP_ENV: development
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
@@ -264,3 +306,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
