@@ -24,16 +24,16 @@ class Conversation(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(BIGINT_PK, primary_key=True, autoincrement=True)
     kind: Mapped[str] = mapped_column(String(20), nullable=False, default="direct")
     title: Mapped[str | None] = mapped_column(String(160), nullable=True)
-    created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     last_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     is_archived: Mapped[bool] = mapped_column(default=False, nullable=False)
 
 
 class ConversationMember(Base):
     __tablename__ = "conversation_members"
-    __table_args__ = (
-        Index("ix_conversation_members_user_id_left_at", "user_id", "left_at"),
-    )
+    __table_args__ = (Index("ix_conversation_members_user_id_left_at", "user_id", "left_at"),)
 
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id", ondelete="CASCADE"), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
@@ -55,7 +55,9 @@ class Message(Base):
     )
 
     id: Mapped[int] = mapped_column(BIGINT_PK, primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     sender_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     client_msg_id: Mapped[str] = mapped_column(String(64), nullable=False)
     content_type: Mapped[str] = mapped_column(String(24), nullable=False, default="text")
@@ -63,19 +65,27 @@ class Message(Base):
     edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     server_seq: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
 
 class MessageRecipient(Base):
     __tablename__ = "message_recipients"
     __table_args__ = (
-        Index("ix_message_recipients_recipient_conversation_message", "recipient_user_id", "conversation_id", "message_id"),
-        Index("ix_message_recipients_conversation_recipient_read_at", "conversation_id", "recipient_user_id", "read_at"),
+        Index(
+            "ix_message_recipients_recipient_conversation_message", "recipient_user_id", "conversation_id", "message_id"
+        ),
+        Index(
+            "ix_message_recipients_conversation_recipient_read_at", "conversation_id", "recipient_user_id", "read_at"
+        ),
     )
 
     message_id: Mapped[int] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True)
     recipient_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
-    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     delivery_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -98,7 +108,9 @@ class OutboxEvent(Base):
     payload_json: Mapped[dict] = mapped_column(JSON, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    next_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
     processing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
