@@ -8,7 +8,16 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
-from app.models import Conversation, ConversationMember, Design, DesignInput, DesignOutput, DesignOutputVersion, User, DesignComment
+from app.models import (
+    Conversation,
+    ConversationMember,
+    Design,
+    DesignInput,
+    DesignOutput,
+    DesignOutputVersion,
+    User,
+    DesignComment,
+)
 from app.models import WorkspaceMember
 from app.schemas.design import (
     CreateDesignCommentRequest,
@@ -37,9 +46,12 @@ from app.services.authorization_service import (
 )
 from app.services.job_center_service import track_job
 from app.services.live_cost_service import get_cloud_pricing, get_workspace_usage
+
+
 async def _enqueue_generation(design_id: int, scale_stance: str, output_language: str = "en") -> None:
     from app.core.redis import get_redis_client
     import json
+
     redis = get_redis_client()
     settings = get_settings()
     stream = f"{settings.outbox_stream_prefix}:generation"
@@ -126,7 +138,9 @@ def _share_url_for_design(design: Design) -> str | None:
     return f"{base}/share/{design.share_token}"
 
 
-def _build_detail_response(design: Design, design_input: DesignInput, design_output: DesignOutput | None) -> DesignDetailResponse:
+def _build_detail_response(
+    design: Design, design_input: DesignInput, design_output: DesignOutput | None
+) -> DesignDetailResponse:
     output_payload = None
     if design_output and design_output.payload:
         output_payload = DesignOutputPayload.model_validate(design_output.payload)
@@ -153,6 +167,7 @@ async def create_design_for_user(
     workspace_member: WorkspaceMember,
     request: CreateDesignRequest,
 ) -> DesignDetailResponse:
+    ensure_design_write_access(workspace_member)
     design = Design(
         owner_id=user.id,
         workspace_id=workspace_member.workspace_id,
@@ -166,7 +181,7 @@ async def create_design_for_user(
     new_input = DesignInput(design_id=design.id, payload=request.input.model_dump())
     db.add(new_input)
     db.flush()
-    
+
     _ensure_design_discussion_conversation(db, design)
     db.commit()
     db.refresh(design)
@@ -250,6 +265,7 @@ def get_design_detail_for_user(db: Session, workspace_member: WorkspaceMember, d
 
 
 def delete_design_for_user(db: Session, workspace_member: WorkspaceMember, design_id: int) -> None:
+    ensure_design_write_access(workspace_member)
     design = _get_workspace_design(db, design_id, workspace_member)
     cid = design.discussion_conversation_id
     if cid is not None:
@@ -303,7 +319,7 @@ async def regenerate_design_for_user(
     output_language = body.output_language if body else "en"
     ensure_design_write_access(workspace_member)
     design, _, _ = get_design_artifact_for_user(db=db, workspace_member=workspace_member, design_id=design_id)
-    
+
     design.status = "generating"
     design.updated_at = datetime.now(timezone.utc)
     db.commit()
@@ -401,7 +417,9 @@ def update_design_architecture_for_user(
     payload["suggested_mermaid_diagram"] = mermaid.strip()
     parsed_output = DesignOutputPayload.model_validate(payload)
     design_output.payload = parsed_output.model_dump()
-    design_output.markdown_export = build_markdown_export(design.title, DesignInputPayload.model_validate(design_input.payload), parsed_output)
+    design_output.markdown_export = build_markdown_export(
+        design.title, DesignInputPayload.model_validate(design_input.payload), parsed_output
+    )
     design.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(design)
@@ -465,7 +483,9 @@ def get_public_design_by_token(db: Session, token: str) -> PublicDesignResponse:
     )
 
 
-def get_design_review_for_user(db: Session, workspace_member: WorkspaceMember, design_id: int) -> DesignReviewStatusResponse:
+def get_design_review_for_user(
+    db: Session, workspace_member: WorkspaceMember, design_id: int
+) -> DesignReviewStatusResponse:
     design = _get_workspace_design(db, design_id, workspace_member)
     return DesignReviewStatusResponse(
         design_id=design.id,
@@ -494,7 +514,9 @@ def update_design_review_for_user(
             .first()
         )
         if not member:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Review owner must be a member of this workspace")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Review owner must be a member of this workspace"
+            )
     if payload.review_status == "approved" and payload.review_owner_user_id is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Approved status requires a review owner")
     design.review_status = payload.review_status
@@ -506,9 +528,16 @@ def update_design_review_for_user(
     return get_design_review_for_user(db, workspace_member, design_id)
 
 
-def list_design_comments_for_user(db: Session, workspace_member: WorkspaceMember, design_id: int) -> list[DesignCommentOut]:
+def list_design_comments_for_user(
+    db: Session, workspace_member: WorkspaceMember, design_id: int
+) -> list[DesignCommentOut]:
     _get_workspace_design(db, design_id, workspace_member)
-    rows = db.query(DesignComment).filter(DesignComment.design_id == design_id).order_by(DesignComment.created_at.asc()).all()
+    rows = (
+        db.query(DesignComment)
+        .filter(DesignComment.design_id == design_id)
+        .order_by(DesignComment.created_at.asc())
+        .all()
+    )
     return [
         DesignCommentOut(
             id=row.id,
@@ -552,7 +581,12 @@ def add_design_comment_for_user(
 def get_design_decision_timeline(db: Session, workspace_member: WorkspaceMember, design_id: int) -> list[dict]:
     design = _get_workspace_design(db, design_id, workspace_member)
     timeline: list[dict] = [
-        {"type": "design_created", "at": design.created_at, "actor_user_id": design.owner_id, "summary": "Design created"},
+        {
+            "type": "design_created",
+            "at": design.created_at,
+            "actor_user_id": design.owner_id,
+            "summary": "Design created",
+        },
     ]
     if design.reviewed_at:
         timeline.append(
@@ -601,18 +635,36 @@ def get_design_decision_timeline(db: Session, workspace_member: WorkspaceMember,
 def get_workspace_ops_summary(db: Session, workspace_member: WorkspaceMember) -> dict[str, int]:
     workspace_id = workspace_member.workspace_id
     total_designs = db.query(func.count(Design.id)).filter(Design.workspace_id == workspace_id).scalar() or 0
-    generating_count = db.query(func.count(Design.id)).filter(Design.workspace_id == workspace_id, Design.status == "generating").scalar() or 0
-    approved_count = db.query(func.count(Design.id)).filter(Design.workspace_id == workspace_id, Design.review_status == "approved").scalar() or 0
-    review_pending_count = db.query(func.count(Design.id)).filter(
-        Design.workspace_id == workspace_id,
-        Design.review_status.in_(["draft", "in_review", "changes_requested"]),
-    ).scalar() or 0
+    generating_count = (
+        db.query(func.count(Design.id))
+        .filter(Design.workspace_id == workspace_id, Design.status == "generating")
+        .scalar()
+        or 0
+    )
+    approved_count = (
+        db.query(func.count(Design.id))
+        .filter(Design.workspace_id == workspace_id, Design.review_status == "approved")
+        .scalar()
+        or 0
+    )
+    review_pending_count = (
+        db.query(func.count(Design.id))
+        .filter(
+            Design.workspace_id == workspace_id,
+            Design.review_status.in_(["draft", "in_review", "changes_requested"]),
+        )
+        .scalar()
+        or 0
+    )
     avg_generation_ms = int(
-        db.query(func.avg(DesignOutput.generation_ms)).join(Design, Design.id == DesignOutput.design_id).filter(Design.workspace_id == workspace_id).scalar()
+        db.query(func.avg(DesignOutput.generation_ms))
+        .join(Design, Design.id == DesignOutput.design_id)
+        .filter(Design.workspace_id == workspace_id)
+        .scalar()
         or 0
     )
     outputs = (
-        db.query(DesignOutput)
+        db.query(DesignOutput.payload)
         .join(Design, Design.id == DesignOutput.design_id)
         .filter(Design.workspace_id == workspace_id)
         .all()
@@ -620,8 +672,8 @@ def get_workspace_ops_summary(db: Session, workspace_member: WorkspaceMember) ->
     min_total = 0
     max_total = 0
     risk_drift_count = 0
-    for out in outputs:
-        payload = out.payload or {}
+    for (payload,) in outputs:
+        payload = payload or {}
         estimated = payload.get("estimated_cloud_cost") or {}
         min_total += int(estimated.get("monthly_usd_min", 0) or 0)
         max_total += int(estimated.get("monthly_usd_max", 0) or 0)
@@ -640,7 +692,9 @@ def get_workspace_ops_summary(db: Session, workspace_member: WorkspaceMember) ->
     }
 
 
-async def get_cost_calibration_for_user(db: Session, workspace_member: WorkspaceMember, design_id: int) -> CostCalibrationResponse:
+async def get_cost_calibration_for_user(
+    db: Session, workspace_member: WorkspaceMember, design_id: int
+) -> CostCalibrationResponse:
     design = _get_workspace_design(db, design_id, workspace_member)
     if not design.output:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Design output not found")
@@ -649,7 +703,10 @@ async def get_cost_calibration_for_user(db: Session, workspace_member: Workspace
     est_max = int(estimated.get("monthly_usd_max", 0) or 0)
     pricing = await get_cloud_pricing()
     usage = await get_workspace_usage(workspace_member.workspace_id)
-    factor = float(pricing.get("compute_index", 1.0) + pricing.get("network_index", 1.0) + pricing.get("storage_index", 1.0)) / 3.0
+    factor = (
+        float(pricing.get("compute_index", 1.0) + pricing.get("network_index", 1.0) + pricing.get("storage_index", 1.0))
+        / 3.0
+    )
     confidence: str = "low"
     traffic = (design.input.payload or {}).get("traffic_assumptions", "") if design.input else ""
     if isinstance(traffic, str) and traffic.strip():
