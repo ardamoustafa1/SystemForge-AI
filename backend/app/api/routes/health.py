@@ -3,8 +3,8 @@ import redis.asyncio as redis
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.deps import db_session_dep, redis_dep
-from app.core.config import get_settings
+from app.api.deps import db_session_dep, redis_dep, settings_dep
+from app.core.config import Settings
 from app.core.metrics import render_prometheus
 
 router = APIRouter(prefix="/health", tags=["health"])
@@ -26,16 +26,17 @@ async def readiness(
 
 
 @router.get("/metrics", include_in_schema=False)
-def metrics(x_metrics_token: str | None = Header(default=None)):
-    settings = get_settings()
+def metrics(
+    x_metrics_token: str | None = Header(default=None),
+    settings: Settings = Depends(settings_dep)
+):
     if x_metrics_token != settings.metrics_secret:
         raise HTTPException(status_code=401, detail="Unauthorized metrics access")
     return Response(content=render_prometheus(), media_type="text/plain; version=0.0.4")
 
 
 @router.get("/api-versions")
-def api_versions():
-    settings = get_settings()
+def api_versions(settings: Settings = Depends(settings_dep)):
     return {
         "current": settings.api_version,
         "deprecation_policy_url": settings.api_deprecation_policy_url,
