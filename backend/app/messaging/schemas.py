@@ -41,4 +41,3 @@ class MessageReadResult:
     read_at_ms: int
     changed: bool
     outbox_event_id: int | None
-
