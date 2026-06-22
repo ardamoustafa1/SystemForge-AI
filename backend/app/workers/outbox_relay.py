@@ -82,6 +82,7 @@ class OutboxRelayWorker:
             maxlen=self.settings.stream_maxlen_approx,
             approximate=True,
         )
+
     async def process_once(self) -> int:
         now = _utcnow()
         with SessionLocal() as db:
