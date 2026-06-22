@@ -20,7 +20,7 @@ Status: **passed**, suitable as local HTTP-stack smoke evidence. Not yet suffici
 | Database / Redis | PostgreSQL 16 / Redis 7 |
 | Dataset | Seeded demo user, one workspace, three architecture designs |
 | k6 image | `grafana/k6@sha256:632ddbc81a4a9fdc9e597da91ab1d8fcf1916dd988b43b4a4559d2f8d8e73d47` |
-| Scenario | `load-test/k6-script.js` against `GET /api/health` |
+| Scenario | `ops/load-tests/k6-systemforge.js` (Currently supports health endpoint and mixed flow) |
 | Stages | 30s ramp to 50 VUs, 60s ramp to 100 VUs, 30s ramp down |
 
 ### Results
@@ -54,14 +54,14 @@ docker run --rm -i \
 
 ## Required Release Benchmarks
 
-The authenticated mixed-workload scenario remains the release-quality gate:
+The authenticated mixed-workload scenario remains the release-quality gate. The script has been updated in `ops/load-tests/k6-systemforge.js` to simulate this flow (Creation, Polling, Export):
 
 ```bash
 BASE_URL=http://localhost:8000/api \
 AUTH_COOKIE='sf_access_token=...; sf_csrf_token=...' \
 CSRF='...' \
 WORKSPACE_ID='1' \
-k6 run ops/loadtest/k6-systemforge.js
+k6 run ops/load-tests/k6-systemforge.js
 ```
 
 Before making a production performance claim, record these separately:
