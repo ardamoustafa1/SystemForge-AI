@@ -7,9 +7,9 @@ def register_and_login(client, email: str):
     r = client.post("/api/auth/register", json=register_payload)
     assert r.status_code == 201
 
-    l = client.post("/api/auth/login", json={"email": email, "password": "StrongPass1"})
-    assert l.status_code == 200
-    csrf = l.cookies.get("sf_csrf_token")
+    login_resp = client.post("/api/auth/login", json={"email": email, "password": "StrongPass1"})
+    assert login_resp.status_code == 200
+    csrf = login_resp.cookies.get("sf_csrf_token")
     assert csrf
     return {"x-csrf-token": csrf}
 
@@ -193,7 +193,9 @@ def test_authz_contract_matrix_roles_vs_design_actions(client):
 
     # Editor can update notes
     client.cookies.clear()
-    editor_login = client.post("/api/auth/login", json={"email": "matrix-editor@example.com", "password": "StrongPass1"})
+    editor_login = client.post(
+        "/api/auth/login", json={"email": "matrix-editor@example.com", "password": "StrongPass1"}
+    )
     assert editor_login.status_code == 200
     editor_headers = {"x-csrf-token": editor_login.cookies.get("sf_csrf_token"), "X-Workspace-Id": str(workspace_id)}
     editor_note = client.patch(f"/api/designs/{design_id}/notes", json={"notes": "editor-note"}, headers=editor_headers)
@@ -201,7 +203,9 @@ def test_authz_contract_matrix_roles_vs_design_actions(client):
 
     # Viewer can read but cannot mutate
     client.cookies.clear()
-    viewer_login = client.post("/api/auth/login", json={"email": "matrix-viewer@example.com", "password": "StrongPass1"})
+    viewer_login = client.post(
+        "/api/auth/login", json={"email": "matrix-viewer@example.com", "password": "StrongPass1"}
+    )
     assert viewer_login.status_code == 200
     viewer_headers = {"x-csrf-token": viewer_login.cookies.get("sf_csrf_token"), "X-Workspace-Id": str(workspace_id)}
     viewer_get = client.get(f"/api/designs/{design_id}", headers=viewer_headers)
