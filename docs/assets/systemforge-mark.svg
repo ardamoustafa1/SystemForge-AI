@@ -1,0 +1,25 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">SystemForge AI mark</title>
+  <desc id="desc">A glowing hexagonal architecture mark.</desc>
+  <rect width="320" height="320" rx="72" fill="#050505"/>
+  <g filter="url(#glow)">
+    <path d="M160 54L252 106V214L160 266L68 214V106L160 54Z" fill="url(#mark)" fill-opacity="0.96"/>
+    <path d="M160 88L222 123V197L160 232L98 197V123L160 88Z" fill="#07070A" fill-opacity="0.9"/>
+    <path d="M160 119L198 141V179L160 201L122 179V141L160 119Z" fill="white" fill-opacity="0.96"/>
+    <path d="M160 54V88M160 232V266M68 106L98 123M222 123L252 106M68 214L98 197M222 197L252 214" stroke="white" stroke-opacity="0.72" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <defs>
+    <filter id="glow" x="12" y="0" width="296" height="320" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="22" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.45 0 0 0 0 0.7 0 0 0 0 1 0 0 0 0.62 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect" result="shape"/>
+    </filter>
+    <linearGradient id="mark" x1="68" y1="54" x2="252" y2="266" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.42" stop-color="#8FC5FF"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+</svg>
