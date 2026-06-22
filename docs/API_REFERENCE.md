@@ -1,28 +1,95 @@
 # SystemForge API Reference
 
-Welcome to the SystemForge API. Our API is organized around REST. Our API has predictable resource-oriented URLs, returns JSON-encoded responses, and uses standard HTTP response codes, authentication, and verbs.
+Welcome to the SystemForge API. Our API is organized around REST, returns JSON-encoded responses, and uses standard HTTP response codes.
 
 ## Base URL
-```
-http://localhost:8000/api
-```
+`http://localhost:8000/api`
 
 ## Authentication
-Authentication to the API is performed via HTTP-Only Cookies for web clients or API Keys via `Authorization: Bearer <token>` for programmatic access.
+Authentication is performed via `Authorization: Bearer <token>`. You can obtain a token by signing in.
 
-## Endpoints
+---
 
-### 1. Designs
-- `GET /api/designs` - List all designs in your workspace.
-- `POST /api/designs` - Create a new design generation request.
-- `GET /api/designs/{id}` - Retrieve details of a specific design.
-- `DELETE /api/designs/{id}` - Delete a design.
+## 1. Designs
 
-### 2. Workspaces
-- `GET /api/workspaces` - List your workspaces.
-- `POST /api/workspaces` - Create a new workspace.
-- `GET /api/workspaces/{id}/members` - List workspace members.
+### Create a Design
+`POST /api/designs`
 
-### 3. Authentication
-- `GET /api/auth/me` - Get current user info.
-- `POST /api/auth/api-keys` - Generate an API key.
+Creates a new architecture design request. This operation is asynchronous.
+
+**Request Body:**
+```json
+{
+  "project_title": "E-commerce Platform",
+  "project_category": "Retail",
+  "business_requirements": "Must handle 10k RPS during sales."
+}
+```
+
+**Response (202 Accepted):**
+```json
+{
+  "id": 101,
+  "status": "pending",
+  "project_title": "E-commerce Platform",
+  "created_at": "2026-06-22T10:00:00Z"
+}
+```
+
+### Get a Design
+`GET /api/designs/{id}`
+
+Retrieves the current state of a design. If `status` is `approved`, the `output` field will contain the full architecture payload.
+
+---
+
+## 2. Workspaces
+
+### List Workspaces
+`GET /api/workspaces`
+
+Returns a list of workspaces the authenticated user belongs to.
+
+**Response (200 OK):**
+```json
+{
+  "workspaces": [
+    {
+      "id": 1,
+      "name": "Acme Corp Engineering",
+      "role": "admin"
+    }
+  ]
+}
+```
+
+---
+
+## 3. WebSockets
+
+### Realtime Updates
+`WS /api/ws/designs/{id}`
+
+Establish a WebSocket connection to receive live updates.
+
+**Incoming Messages (from Server):**
+```json
+{
+  "type": "design_updated",
+  "payload": {
+    "status": "generating",
+    "progress": 45
+  }
+}
+```
+
+## Error Codes
+
+| Status Code | Description |
+|---|---|
+| `400 Bad Request` | Invalid parameters or malformed JSON. |
+| `401 Unauthorized` | Missing or invalid Bearer token. |
+| `403 Forbidden` | User lacks permission (RBAC violation). |
+| `404 Not Found` | Resource does not exist. |
+| `429 Too Many Requests` | Rate limit exceeded. |
+| `500 Internal Error` | Unexpected backend failure. |
