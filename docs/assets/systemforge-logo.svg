@@ -1,0 +1,27 @@
+<svg width="1280" height="320" viewBox="0 0 1280 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">SystemForge AI</title>
+  <desc id="desc">SystemForge AI wordmark with a glowing forge-inspired architecture mark.</desc>
+  <rect width="1280" height="320" rx="48" fill="#050505"/>
+  <g filter="url(#glow)">
+    <path d="M158 64L244 112V208L158 256L72 208V112L158 64Z" fill="url(#mark)" fill-opacity="0.92"/>
+    <path d="M158 94L218 128V194L158 228L98 194V128L158 94Z" fill="#050505" fill-opacity="0.86"/>
+    <path d="M158 118L196 140V182L158 204L120 182V140L158 118Z" fill="white" fill-opacity="0.92"/>
+    <path d="M158 64V94M158 228V256M72 112L98 128M218 128L244 112M72 208L98 194M218 194L244 208" stroke="white" stroke-opacity="0.7" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="310" y="146" fill="white" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="74" font-weight="760" letter-spacing="-3">SystemForge AI</text>
+  <text x="314" y="207" fill="#A3A3A3" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="30" font-weight="420" letter-spacing="-0.4">Turn product requirements into reviewable architecture artifacts.</text>
+  <defs>
+    <filter id="glow" x="24" y="16" width="268" height="288" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.62 0 0 0 0 0.78 0 0 0 0 1 0 0 0 0.48 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect" result="shape"/>
+    </filter>
+    <linearGradient id="mark" x1="72" y1="64" x2="244" y2="256" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.42" stop-color="#9CC9FF"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+</svg>

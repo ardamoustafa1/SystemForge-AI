@@ -7,6 +7,8 @@ describe("ws contract schemas", () => {
     const envelope = parseWsEnvelope({
       type: "message.accepted",
       schema_version: 1,
+      event_id: "test-event-id",
+      ts_ms: 1612345678000,
       payload: {
         message_id: 10,
         client_msg_id: "a33a9859-8541-4455-8f7c-dfbe66863e40",

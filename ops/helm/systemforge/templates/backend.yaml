@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "systemforge.fullname" . }}-backend
+  labels:
+    app: systemforge-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: systemforge-backend
+  template:
+    metadata:
+      labels:
+        app: systemforge-backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.image.repository }}/{{ .Values.image.backend }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://{{ .Values.postgres.user }}:{{ required "A valid .Values.postgres.password is required" .Values.postgres.password }}@{{ include "systemforge.fullname" . }}-postgres:5432/{{ .Values.postgres.db }}"
+            - name: REDIS_URL
+              value: "redis://{{ include "systemforge.fullname" . }}-redis:6379/0"
+            - name: JWT_SECRET
+              value: {{ required "A valid .Values.env.jwtSecret is required for production deployments" .Values.env.jwtSecret | quote }}
+            - name: PUBLIC_APP_URL
+              value: {{ .Values.env.publicAppUrl | quote }}
+            - name: OPENAI_API_KEY
+              value: {{ .Values.env.openaiApiKey | quote }}
+            - name: CORS_ORIGINS
+              value: {{ .Values.env.corsOrigins | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "systemforge.fullname" . }}-backend
+  labels:
+    app: systemforge-backend
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.backendPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: systemforge-backend

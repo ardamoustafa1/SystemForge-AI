@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: systemforge-generation-worker
+  labels:
+    app: systemforge
+    component: generation-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: systemforge
+      component: generation-worker
+  template:
+    metadata:
+      labels:
+        app: systemforge
+        component: generation-worker
+    spec:
+      containers:
+      - name: worker
+        image: ghcr.io/ardamoustafa1/systemforge-backend:latest
+        command: ["python", "-m", "app.workers.run_generation_worker"]
+        envFrom:
+        - configMapRef:
+            name: systemforge-config
+        - secretRef:
+            name: systemforge-secrets
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "200m"
+            memory: "512Mi"

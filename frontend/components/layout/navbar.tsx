@@ -24,15 +24,15 @@ export function Navbar() {
             {t("nav.comparison")}
           </a>
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher />
-          <Link href="/auth/sign-in">
-            <Button variant="ghost" className="rounded-full text-white/70 hover:bg-white/[0.03] hover:text-white font-medium">
+          <Link href="/auth/sign-in" className="hidden sm:inline-flex">
+            <Button variant="ghost" className="rounded-full text-white/70 hover:bg-white/[0.03] hover:text-white font-medium text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9">
               {t("common.signIn")}
             </Button>
           </Link>
           <Link href="/auth/sign-up">
-            <Button className="rounded-full bg-white text-black hover:bg-white/90 font-medium">
+            <Button className="rounded-full bg-white text-black hover:bg-white/90 font-medium text-xs sm:text-sm px-4 sm:px-6 h-8 sm:h-9">
               {t("common.getStarted")}
             </Button>
           </Link>

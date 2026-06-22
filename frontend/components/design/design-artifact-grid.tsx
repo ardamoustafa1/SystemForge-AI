@@ -6,7 +6,13 @@ import { ClipboardList, Trello, Kanban } from "lucide-react";
 import { DesignOutput, DesignRecord } from "@/types/design";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArchitectureCanvas } from "@/components/design/architecture-canvas";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const ArchitectureCanvas = dynamic(
+  () => import("@/components/design/architecture-canvas").then((m) => m.ArchitectureCanvas),
+  { ssr: false, loading: () => <Skeleton className="w-full h-[520px] rounded-2xl bg-[#0a0a0a] border border-white/5" /> }
+);
 import { api } from "@/lib/api";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";

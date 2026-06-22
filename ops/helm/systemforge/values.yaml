@@ -1,0 +1,66 @@
+replicaCount: 3
+
+image:
+  repository: ghcr.io/ardamoustafa1
+  backend: systemforge-backend
+  frontend: systemforge-frontend
+  pullPolicy: IfNotPresent
+  tag: "0.1.0"
+
+env:
+  jwtSecret: "" # Must be injected via --set or external secret
+  frontendPublicApiUrl: "https://systemforge.local/api"
+  publicAppUrl: "https://systemforge.local"
+  openaiApiKey: ""
+  corsOrigins: "https://systemforge.local"
+
+service:
+  type: ClusterIP
+  backendPort: 8000
+  frontendPort: 3000
+
+postgres:
+  enabled: true
+  user: "sf_user"
+  password: "" # Must be injected via --set or external secret
+  db: "sf_db"
+
+redis:
+  enabled: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://systemforge.local"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+  hosts:
+    - host: systemforge.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: systemforge-tls
+      hosts:
+        - systemforge.local
+
+hpa:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 75

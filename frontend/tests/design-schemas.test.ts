@@ -17,6 +17,7 @@ describe("create design schema", () => {
       data_sensitivity: "medium",
       real_time_required: true,
       mode: "product",
+      scale_stance: "balanced",
     });
     expect(parsed.success).toBe(true);
   });
@@ -35,6 +36,7 @@ describe("create design schema", () => {
       data_sensitivity: "medium",
       real_time_required: true,
       mode: "product",
+      scale_stance: "balanced",
     });
     expect(parsed.success).toBe(false);
   });

@@ -96,15 +96,6 @@ export default function DashboardPage() {
             className="pl-11 h-12 bg-[#0a0a0a] border-white/5 text-white/90 placeholder:text-white/30 rounded-xl focus-visible:ring-1 focus-visible:ring-white/20 focus-visible:border-white/20"
           />
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" disabled className="h-12 border-white/5 bg-[#0a0a0a] text-white/40 rounded-xl font-medium">
-            {t("dashboard.statusFilter")}
-          </Button>
-          <Button variant="outline" disabled className="h-12 border-white/5 bg-[#0a0a0a] text-white/40 rounded-xl font-medium hidden sm:flex">
-            {t("dashboard.projectTypeFilter")}
-          </Button>
-        </div>
-      </div>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between pb-2">

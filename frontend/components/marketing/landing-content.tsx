@@ -40,7 +40,7 @@ export function LandingContent() {
       {/* Subtle Premium Color Spotlight Effect */}
       <div className="pointer-events-none absolute left-0 right-0 top-0 -z-10 h-[800px] w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/[0.07] via-background to-background" />
       <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-0 -z-10 h-[500px] w-[800px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/[0.06] via-transparent to-transparent opacity-60 mix-blend-screen" />
-      
+
       <section className="container-page py-20 sm:py-32 relative z-10">
         <motion.div className="mx-auto max-w-4xl text-center" {...riseIn}>
           <div className="inline-flex items-center justify-center rounded-full border border-white/5 bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-md transition-colors hover:bg-white/[0.05]">
@@ -49,6 +49,7 @@ export function LandingContent() {
           </div>
           <h1 className="mt-8 text-4xl font-medium tracking-tight sm:text-7xl lg:text-[5rem] leading-[1.1]">
             {t("landing.heroTitle1")}
+            {" "}
             <span className="mt-2 block bg-gradient-to-b from-white via-indigo-100 to-indigo-200/50 bg-clip-text text-transparent">
               {t("landing.heroTitle2")}
             </span>
@@ -85,7 +86,7 @@ export function LandingContent() {
               </div>
               <div className="w-[52px]"></div> {/* spacer for centering */}
             </div>
-            
+
             {/* Window Content */}
             <div className="grid gap-8 p-8 md:grid-cols-2 lg:gap-12 text-left">
               <div>
@@ -103,7 +104,7 @@ export function LandingContent() {
                   {t("landing.topTradeoffText")}
                 </p>
               </div>
-              
+
               {/* Monochromatic Scorecard */}
               <div className="rounded-xl border border-white/5 bg-white/[0.02] p-6 transition-colors hover:bg-white/[0.03]">
                 <div className="relative">
@@ -123,7 +124,7 @@ export function LandingContent() {
                         <span className="text-white/60 group-hover:text-white/90 transition-colors">{item.label}</span>
                         <div className="flex items-center gap-4">
                           <div className="h-1 w-24 overflow-hidden bg-white/10 rounded-full">
-                            <motion.div 
+                            <motion.div
                               initial={{ width: 0 }}
                               whileInView={{ width: `${item.score * 10}%` }}
                               transition={{ delay: 0.5 + idx * 0.1, duration: 1, ease: "easeOut" }}
@@ -155,7 +156,7 @@ export function LandingContent() {
             <motion.div key={feature.titleKey} {...riseIn} transition={{ ...riseIn.transition, delay: index * 0.05 }}>
               <div className="group relative h-full rounded-3xl border border-white/5 bg-[#0a0a0a] p-8 overflow-hidden transition-all duration-300 hover:border-white/10 hover:bg-[#0c0c0e] hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.5)]">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                
+
                 <div className="relative z-10">
                   <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] ring-1 ring-white/5 transition-all duration-500 group-hover:scale-110 group-hover:bg-indigo-500/10 group-hover:ring-indigo-500/20 group-hover:shadow-[0_0_20px_rgba(99,102,241,0.1)]">
                     {(() => {
@@ -204,7 +205,7 @@ export function LandingContent() {
                 {t("landing.comparisonSubtitle")}
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-2">
               <div className="border-b border-white/5 p-8 md:p-12 md:border-b-0 md:border-r">
                 <div className="mb-6 inline-flex items-center rounded bg-white/5 px-2.5 py-1 text-xs font-medium text-white/40 uppercase tracking-widest">
@@ -226,7 +227,7 @@ export function LandingContent() {
                   </li>
                 </ul>
               </div>
-              
+
               <div className="bg-white/[0.02] p-8 md:p-12">
                 <div className="mb-6 inline-flex items-center rounded bg-white px-2.5 py-1 text-xs font-medium text-black uppercase tracking-widest">
                   SystemForge

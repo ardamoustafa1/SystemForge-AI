@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "systemforge.fullname" . }}-redis-postgres-isolation
+  labels:
+    {{- include "systemforge.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app, operator: In, values: ["systemforge-postgres", "systemforge-redis"]}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - {key: app, operator: In, values: ["systemforge-backend", "systemforge-frontend", "systemforge-worker"]}
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379

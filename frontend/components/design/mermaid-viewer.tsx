@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import mermaid from "mermaid";
+import DOMPurify from "dompurify";
 import { Card } from "@/components/ui/card";
 import { useI18n } from "@/i18n/i18n-context";
 
@@ -13,10 +14,10 @@ export function MermaidViewer({ code }: Props) {
   const elementId = useMemo(() => `mermaid-${Math.random().toString(36).slice(2, 9)}`, []);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: false, theme: "dark" });
+    mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "strict" });
     mermaid
       .render(elementId, code)
-      .then(({ svg: rendered }) => setSvg(rendered))
+      .then(({ svg: rendered }) => setSvg(DOMPurify.sanitize(rendered)))
       .catch(() => setSvg(""));
   }, [code, elementId]);
 

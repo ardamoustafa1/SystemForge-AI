@@ -1,5 +1,5 @@
 const ENV = {
-  apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api",
+  apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "/api",
   appName: process.env.NEXT_PUBLIC_APP_NAME ?? "SystemForge AI",
 };
 

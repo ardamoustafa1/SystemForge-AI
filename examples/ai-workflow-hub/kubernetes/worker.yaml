@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-workflow-worker
+  labels:
+    app.kubernetes.io/name: ai-workflow-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ai-workflow-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ai-workflow-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/example/ai-workflow-worker:0.1.0
+          envFrom:
+            - secretRef:
+                name: ai-workflow-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            exec:
+              command: ["python", "-m", "app.healthcheck"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-workflow-worker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-workflow-worker
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

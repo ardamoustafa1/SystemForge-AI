@@ -1,0 +1,38 @@
+{{- $workers := list "generation" "export" "outbox" "delivery" "notification" -}}
+{{- range $worker := $workers }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "systemforge.fullname" $ }}-worker-{{ $worker }}
+  labels:
+    app: systemforge-worker-{{ $worker }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: systemforge-worker-{{ $worker }}
+  template:
+    metadata:
+      labels:
+        app: systemforge-worker-{{ $worker }}
+    spec:
+      containers:
+        - name: {{ $worker }}
+          image: "{{ $.Values.image.repository }}/{{ $.Values.image.backend }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["python", "-m", "app.workers.run_{{ $worker }}_worker"]
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://{{ $.Values.postgres.user }}:{{ required "A valid .Values.postgres.password is required" $.Values.postgres.password }}@{{ include "systemforge.fullname" $ }}-postgres:5432/{{ $.Values.postgres.db }}"
+            - name: REDIS_URL
+              value: "redis://{{ include "systemforge.fullname" $ }}-redis:6379/0"
+            - name: OPENAI_API_KEY
+              value: {{ $.Values.env.openaiApiKey | quote }}
+{{- end }}

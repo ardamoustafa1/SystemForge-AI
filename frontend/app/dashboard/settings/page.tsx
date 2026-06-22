@@ -127,6 +127,7 @@ export default function SettingsPage() {
   const { activeWorkspace, activeRole, members, removeMember, updateMemberRole } = useWorkspace();
   const [activeTab, setActiveTab] = useState("profile");
   const [showInvite, setShowInvite] = useState(false);
+  const [newApiKey, setNewApiKey] = useState<string | null>(null);
 
   const { data: settings, mutate } = useSWR<UserSettings>("/users/me/settings", api);
   const { data: me } = useSWR<AuthUser>("/auth/me", api);
@@ -164,6 +165,20 @@ export default function SettingsPage() {
   return (
     <div className="max-w-5xl space-y-8 animate-in fade-in zoom-in-95 duration-500">
       {showInvite && <InviteDialog onClose={() => setShowInvite(false)} />}
+      {newApiKey && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0d0d0d] p-8 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.9)]">
+            <h3 className="text-base font-semibold text-white mb-2">Your New API Key</h3>
+            <p className="text-sm text-white/60 mb-4">Please copy this key now. You will not be able to see it again.</p>
+            <div className="p-3 bg-white/5 border border-white/10 rounded-xl mb-6">
+              <code className="text-sm text-emerald-400 break-all">{newApiKey}</code>
+            </div>
+            <button onClick={() => setNewApiKey(null)} className="w-full rounded-xl bg-white py-2.5 text-sm font-semibold text-black hover:bg-white/90 transition-colors">
+              I have copied it
+            </button>
+          </div>
+        </div>
+      )}
 
       <div>
         <h1 className="text-3xl font-medium tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
@@ -217,7 +232,16 @@ export default function SettingsPage() {
                 <h3 className="text-lg font-medium text-red-400">Danger Zone</h3>
                 <p className="text-sm text-white/40 mt-1">Permanently delete your account and all generated architectures.</p>
                 <div className="mt-6 flex">
-                  <Button variant="outline" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/20">Delete Account</Button>
+                  <Button variant="outline" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/20" onClick={async () => {
+                    if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+                      try {
+                        await api("/users/me/settings", { method: "DELETE" });
+                        window.location.href = "/login";
+                      } catch (err) {
+                        alert("Failed to delete account.");
+                      }
+                    }
+                  }}>Delete Account</Button>
                 </div>
               </Card>
             </div>
@@ -375,7 +399,14 @@ export default function SettingsPage() {
                 <div className="mt-8 text-center py-12 rounded-xl border border-dashed border-white/10 bg-white/[0.01]">
                   <Key className="h-8 w-8 text-white/20 mx-auto mb-3" />
                   <p className="text-sm text-white/50">You don&apos;t have any active API keys.</p>
-                  <Button className="mt-4 bg-white/10 text-white hover:bg-white/20 border border-white/5">Generate Secret Key</Button>
+                  <Button className="mt-4 bg-white/10 text-white hover:bg-white/20 border border-white/5" onClick={async () => {
+                    try {
+                      const res = await api<{api_key: string}>("/auth/api-keys", { method: "POST" });
+                      setNewApiKey(res.api_key);
+                    } catch (err) {
+                      alert("Failed to generate API key.");
+                    }
+                  }}>Generate Secret Key</Button>
                 </div>
               </Card>
             </div>
