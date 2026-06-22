@@ -10,12 +10,14 @@ from sqlalchemy.orm import sessionmaker
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault("APP_ENV", "test")
+os.environ["JWT_SECRET"] = "systemforge-test-secret-at-least-32-characters"
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
 # Deterministic PDF tests; no outbound Kroki calls.
 os.environ.setdefault("MERMAID_PDF_RENDER_ENABLED", "false")
 
-from app.db.base import Base
-from app.db.session import get_db
-from app.main import app
+from app.db.base import Base  # noqa: E402
+from app.db.session import get_db  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_systemforge.db"
