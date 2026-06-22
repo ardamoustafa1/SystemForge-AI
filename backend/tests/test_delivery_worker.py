@@ -5,7 +5,7 @@ import pytest
 from app.messaging.models import Conversation, ConversationMember
 from app.models.user import User
 from app.workers.delivery_worker import DeliveryWorker
-from conftest import TestingSessionLocal
+from tests.conftest import TestingSessionLocal
 
 
 class FakeRedis:
