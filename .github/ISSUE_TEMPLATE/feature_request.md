@@ -1,35 +1,20 @@
 ---
-name: Feature request
-about: Suggest a product, architecture, DX, or ops improvement
-title: "feat: "
+name: Feature Request
+about: Suggest an idea for SystemForge AI
+title: '[FEATURE] '
 labels: enhancement
-assignees: ""
+assignees: ''
+
 ---
 
-## Problem
+## Is your feature request related to a problem? Please describe.
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
-What user/developer problem should this solve?
+## Describe the solution you'd like
+A clear and concise description of what you want to happen.
 
-## Proposed solution
+## Describe alternatives you've considered
+A clear and concise description of any alternative solutions or features you've considered.
 
-What should change?
-
-## Alternatives considered
-
-What other approaches did you consider?
-
-## Scope
-
-- [ ] Frontend
-- [ ] Backend
-- [ ] Docs
-- [ ] Ops / infrastructure
-- [ ] Security
-
-## Acceptance criteria
-
-- [ ] 
-
-## Notes / screenshots
-
-Add context, links, mockups, or examples.
+## Additional context
+Add any other context or screenshots about the feature request here.
