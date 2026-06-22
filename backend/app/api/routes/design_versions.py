@@ -36,6 +36,17 @@ def compare_versions(
     return compare_output_versions(db, workspace_member, design_id, version_a, version_b)
 
 
+@router.get("/{design_id}/versions/explain")
+def explain_versions(
+    design_id: int,
+    version_a: int = Query(..., alias="a"),
+    version_b: int = Query(..., alias="b"),
+    db: Session = Depends(get_db),
+    workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
+):
+    return explain_output_diff(db, workspace_member, design_id, version_a, version_b)
+
+
 @router.get("/{design_id}/versions/{version_id}", response_model=DesignVersionDetail)
 def get_version(
     design_id: int,
@@ -46,12 +57,4 @@ def get_version(
     return get_output_version_detail(db, workspace_member, design_id, version_id)
 
 
-@router.get("/{design_id}/versions/explain")
-def explain_versions(
-    design_id: int,
-    version_a: int = Query(..., alias="a"),
-    version_b: int = Query(..., alias="b"),
-    db: Session = Depends(get_db),
-    workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
-):
-    return explain_output_diff(db, workspace_member, design_id, version_a, version_b)
+
