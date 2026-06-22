@@ -24,7 +24,7 @@ def _readme(title: str) -> str:
         > Auto-generated AWS Infrastructure as Code by **SystemForge AI**.
 
         ## Getting Started
-        
+
         1. Install Terraform
         2. Configure AWS credentials (`aws configure`)
         3. Run the following commands:
@@ -49,14 +49,14 @@ def _main_tf(flags: dict[str, bool]) -> str:
         module "vpc" {
           source  = "terraform-aws-modules/vpc/aws"
           version = "5.0.0"
-          
+
           name = "${var.project_name}-vpc"
           cidr = "10.0.0.0/16"
-          
+
           azs             = ["${var.aws_region}a", "${var.aws_region}b"]
           private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
           public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
-          
+
           enable_nat_gateway = true
           single_nat_gateway = true
         }
@@ -87,7 +87,7 @@ def _main_tf(flags: dict[str, bool]) -> str:
 
               vpc_security_group_ids = [module.vpc.default_security_group_id]
               subnet_ids             = module.vpc.private_subnets
-              
+
               skip_final_snapshot = true
             }
         """)
@@ -133,7 +133,7 @@ def _main_tf(flags: dict[str, bool]) -> str:
               cluster_identifier = aws_docdb_cluster.mongo.id
               instance_class     = "db.t3.medium"
             }
-            
+
             resource "aws_docdb_subnet_group" "mongo_subnet" {
               name       = "${var.project_name}-mongo-subnet"
               subnet_ids = module.vpc.private_subnets
@@ -186,7 +186,7 @@ def build_terraform_zip(
     design_output: DesignOutputPayload,
 ) -> bytes:
     """Return in-memory ZIP bytes for the Terraform IaC."""
-    
+
     # We heuristically detect components like scaffold_service does
     stack = (design_input.preferred_stack or "") + " " + " ".join(design_output.core_components)
 
