@@ -20,9 +20,7 @@ class DesignInputPayload(BaseModel):
     real_time_required: bool
     mode: Literal["interview", "product"]
     document_context: str | None = Field(
-        default=None, 
-        max_length=50000, 
-        description="Raw text from uploaded PRD or design document"
+        default=None, max_length=50000, description="Raw text from uploaded PRD or design document"
     )
 
 
@@ -37,6 +35,8 @@ class Scorecard(BaseModel):
     biggest_bottleneck: str
     first_optimization: str
     avoid_overengineering: str
+
+
 class EstimatedCloudCost(BaseModel):
     monthly_usd_min: int = Field(ge=0)
     monthly_usd_max: int = Field(ge=0)
@@ -131,16 +131,20 @@ class DesignOutputPayload(BaseModel):
     architecture_scorecard: Scorecard
     estimated_cloud_cost: EstimatedCloudCost | None = Field(
         default=None,
-        description="Rough estimation of monthly cloud cost on AWS/GCP based on traffic and scale requirements."
+        description="Rough estimation of monthly cloud cost on AWS/GCP based on traffic and scale requirements.",
     )
     runtime_topology: RuntimeTopologySection = Field(default_factory=RuntimeTopologySection)
     data_flows: DataFlowSection = Field(default_factory=DataFlowSection)
     websocket_architecture: WebsocketArchitectureSection = Field(default_factory=WebsocketArchitectureSection)
     ai_architecture: AIArchitectureSection = Field(default_factory=AIArchitectureSection)
     security_architecture: SecurityArchitectureSection = Field(default_factory=SecurityArchitectureSection)
-    video_streaming_architecture: VideoStreamingArchitectureSection = Field(default_factory=VideoStreamingArchitectureSection)
+    video_streaming_architecture: VideoStreamingArchitectureSection = Field(
+        default_factory=VideoStreamingArchitectureSection
+    )
     database_architecture: DatabaseArchitectureSection = Field(default_factory=DatabaseArchitectureSection)
-    observability_architecture: ObservabilityArchitectureSection = Field(default_factory=ObservabilityArchitectureSection)
+    observability_architecture: ObservabilityArchitectureSection = Field(
+        default_factory=ObservabilityArchitectureSection
+    )
     suggested_mermaid_diagram: str
     final_recommendation: str
     assumptions: list[str] = Field(default_factory=list)
