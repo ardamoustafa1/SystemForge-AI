@@ -107,7 +107,9 @@ class FakeRedis:
 @pytest.mark.asyncio
 async def test_presence_register_heartbeat_unregister_flow():
     redis = FakeRedis()
-    service = PresenceService(redis_client=redis, presence_ttl_seconds=75, socket_ttl_seconds=75, user_sockets_ttl_seconds=120)
+    service = PresenceService(
+        redis_client=redis, presence_ttl_seconds=75, socket_ttl_seconds=75, user_sockets_ttl_seconds=120
+    )
     user_id = 42
     socket_id = "skt_1"
 
@@ -166,4 +168,3 @@ async def test_presence_online_and_active_sessions_queries():
     state_after_one = await service.get_presence_state(user_id=user_id)
     assert state_after_one.status in {"online", "away"}
     assert state_after_one.active_sessions == 1
-
