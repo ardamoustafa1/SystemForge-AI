@@ -10,4 +10,3 @@ class OpsSummaryResponse(BaseModel):
     monthly_cost_min_total: int
     monthly_cost_max_total: int
     risk_drift_count: int
-
