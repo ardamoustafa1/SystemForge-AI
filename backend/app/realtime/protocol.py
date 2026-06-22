@@ -149,4 +149,3 @@ class SessionResumedPayload(BaseModel):
     resumed: bool = True
     replayed_events: int = Field(default=0, ge=0)
     server_ts_ms: int = Field(ge=0)
-
