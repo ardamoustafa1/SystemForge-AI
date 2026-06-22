@@ -123,6 +123,7 @@ class DeliveryWorker:
     ) -> None:
         try:
             from app.messaging.service import acknowledge_delivered
+
             with SessionLocal() as db:
                 acknowledge_delivered(db, message_id=payload.message_id, recipient_user_id=recipient_user_id)
         except Exception:
