@@ -33,6 +33,7 @@ services:
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      METRICS_SECRET: ${BACKEND_METRICS_SECRET:-change-me-metrics}
       OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${BACKEND_OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
@@ -40,6 +41,8 @@ services:
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
       AUTO_CREATE_TABLES: "false"
     depends_on:
+      backend-demo-seed:
+        condition: service_completed_successfully
       backend-migrate:
         condition: service_completed_successfully
       postgres:
@@ -58,7 +61,7 @@ services:
     build:
       context: ./backend
       target: runtime
-    command: ["python", "-m", "app.workers.run_outbox_relay"]
+    command: ["python", "-m", "app.workers.run_outbox_worker"]
     environment:
       DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
@@ -185,6 +188,7 @@ services:
       retries: 3
 
   backend-test:
+    profiles: ["test"]
     build:
       context: ./backend
       target: test
@@ -193,6 +197,31 @@ services:
       REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
       CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  backend-demo-seed:
+    build:
+      context: ./backend
+      target: runtime
+    command: ["python", "-m", "scripts.seed_demo"]
+    environment:
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql+psycopg://systemforge:systemforge@postgres:5432/systemforge}
+      REDIS_URL: ${BACKEND_REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-change-me}
+      OPENAI_API_KEY: ${BACKEND_OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${BACKEND_OPENAI_MODEL:-gpt-4.1-mini}
+      CORS_ORIGINS: http://localhost:3000
+      AUTO_CREATE_TABLES: "false"
+      DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@systemforge.dev}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-SystemForgeDemo123!}
+      DEMO_USER_FULL_NAME: ${DEMO_USER_FULL_NAME:-SystemForge Demo}
+      DEMO_WORKSPACE_NAME: ${DEMO_WORKSPACE_NAME:-SystemForge Showcase}
     depends_on:
       backend-migrate:
         condition: service_completed_successfully
@@ -219,10 +248,13 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: /api
+        BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:8000}
     environment:
-      NEXT_PUBLIC_API_URL: ${FRONTEND_NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
-      BACKEND_INTERNAL_URL_WS: ${BACKEND_INTERNAL_URL_WS:-http://backend:8000/api/ws}
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:8000}
       NEXT_PUBLIC_APP_NAME: SystemForge AI
     depends_on:
       backend:
