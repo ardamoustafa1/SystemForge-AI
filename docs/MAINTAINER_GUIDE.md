@@ -46,6 +46,7 @@ Recommended labels:
 Before public sharing:
 
 - Run the 3-minute demo script.
-- Verify screenshots in `docs/assets`.
+- Ensure API docs stay synchronized with endpoints.
+- Verify screenshots in `docs/screenshots`.
 - Confirm demo credentials work locally.
 - Confirm README claims match the current product state.
