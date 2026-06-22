@@ -261,5 +261,5 @@ class GenerationWorker:
             set_worker_queue_lag("generation", float(len(stream_entries)))
             for event_id, fields in stream_entries:
                 await self._process_event(event_id, fields)
-                processed = processed + 1  # type: ignore  # type: ignore
+                processed = processed + 1  # type: ignore
         return processed
