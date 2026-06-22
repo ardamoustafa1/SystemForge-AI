@@ -37,7 +37,9 @@ async def enforce_rate_limit(scope: str, identifier: str, limit: int, window_sec
         current += 1
         _memory_bucket[key] = (current, expires_at)
         if current > limit:
-            await record_abuse_event(event_type="rate-limit", actor=identifier, severity=45, metadata={"scope": scope, "fallback": "memory"})
+            await record_abuse_event(
+                event_type="rate-limit", actor=identifier, severity=45, metadata={"scope": scope, "fallback": "memory"}
+            )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Rate limit exceeded",
@@ -69,7 +71,9 @@ async def enforce_usage_quota(
         if current == consume_units:
             await redis.expire(key, window_seconds)
         if current > max_units:
-            await record_abuse_event(event_type="quota-exceeded", actor=identifier, severity=70, metadata={"scope": scope})
+            await record_abuse_event(
+                event_type="quota-exceeded", actor=identifier, severity=70, metadata={"scope": scope}
+            )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Usage quota exceeded",
@@ -86,7 +90,12 @@ async def enforce_usage_quota(
         current += consume_units
         _memory_quota[key] = (current, expires_at)
         if current > max_units:
-            await record_abuse_event(event_type="quota-exceeded", actor=identifier, severity=60, metadata={"scope": scope, "fallback": "memory"})
+            await record_abuse_event(
+                event_type="quota-exceeded",
+                actor=identifier,
+                severity=60,
+                metadata={"scope": scope, "fallback": "memory"},
+            )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Usage quota exceeded",
