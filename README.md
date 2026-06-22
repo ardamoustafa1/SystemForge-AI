@@ -7,6 +7,8 @@
 SystemForge AI is an artifact-first architecture assistant for teams that want more than a chatbot transcript. Give it a product brief; it produces a schema-validated architecture package with executive summary, runtime topology, database design, security model, cost notes, implementation checklist, Mermaid diagrams, review workflow, and exports.
 
 [![CI](https://github.com/ardamoustafa1/SystemForge-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/ardamoustafa1/SystemForge-AI/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/ardamoustafa1/SystemForge-AI/actions/workflows/codeql.yml/badge.svg)](https://github.com/ardamoustafa1/SystemForge-AI/actions/workflows/codeql.yml)
+[![Discussions](https://img.shields.io/github/discussions/ardamoustafa1/SystemForge-AI)](https://github.com/ardamoustafa1/SystemForge-AI/discussions)
 ![Next.js](https://img.shields.io/badge/frontend-Next.js%2015-111111)
 ![FastAPI](https://img.shields.io/badge/backend-FastAPI-05998b)
 ![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL%2016-336791)
@@ -31,26 +33,32 @@ SystemForge AI turns that flow into a product:
 ## Product tour
 
 <p align="center">
-  <img src="docs/assets/systemforge-landing.png" alt="SystemForge AI product overview" width="100%">
+  <img src="docs/screenshots/systemforge-landing.png" alt="SystemForge AI product overview" width="100%">
 </p>
 
 <table>
   <tr>
     <td width="50%">
-      <img src="docs/assets/systemforge-dashboard.png" alt="SystemForge AI seeded architecture dashboard">
+      <img src="docs/screenshots/systemforge-dashboard.png" alt="SystemForge AI seeded architecture dashboard">
     </td>
     <td width="50%">
-      <img src="docs/assets/systemforge-design-review.png" alt="SystemForge AI collaborative architecture review">
+      <img src="docs/screenshots/systemforge-design-review.png" alt="SystemForge AI collaborative architecture review">
     </td>
   </tr>
   <tr>
     <td colspan="2">
-      <img src="docs/assets/systemforge-signup.png" alt="SystemForge AI workspace onboarding">
+      <img src="docs/screenshots/systemforge-signup.png" alt="SystemForge AI workspace onboarding">
     </td>
   </tr>
 </table>
 
-## 3-minute demo
+## 🌟 Live Demo & Community
+
+- **Live Demo**: [https://demo.systemforge.dev](https://demo.systemforge.dev)
+- **Community Discussions**: [Join GitHub Discussions](https://github.com/ardamoustafa1/SystemForge-AI/discussions)
+- **Support the project**: [💖 Sponsor on GitHub](https://github.com/sponsors/ardamoustafa1)
+
+## 3-minute local demo
 
 ```bash
 git clone https://github.com/ardamoustafa1/SystemForge-AI.git
@@ -181,7 +189,7 @@ BASE_URL=http://localhost:8000/api \
 AUTH_COOKIE='...' \
 CSRF='...' \
 WORKSPACE_ID='1' \
-k6 run ops/loadtest/k6-systemforge.js
+k6 run ops/load-tests/k6-systemforge.js
 ```
 
 Benchmark plan and report:
