@@ -6,7 +6,7 @@ from app.api.deps import get_db
 from app.auth.deps import get_current_user, enforce_csrf
 from app.core.idempotency import enforce_idempotency
 from app.models.user import User
-from app.models.design import UserSettings
+from app.models import UserSettings
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/users/me/settings", tags=["settings"])
