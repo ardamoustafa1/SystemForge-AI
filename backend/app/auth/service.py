@@ -55,8 +55,8 @@ def _issue_refresh_session(db: Session, user: User) -> str:
         user_id=user.id,
         token_hash=_hash_refresh_token(raw_token),
         is_revoked=False,
-        created_at=datetime.now(timezone.utc),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.refresh_exp_days),
+        created_at=datetime.utcnow(),
+        expires_at=datetime.utcnow() + timedelta(days=settings.refresh_exp_days),
     )
     db.add(session)
     db.flush()
@@ -100,7 +100,7 @@ def rotate_refresh_token(db: Session, refresh_token: str) -> tuple[AuthResponse,
     session = db.scalar(select(RefreshTokenSession).where(RefreshTokenSession.token_hash == token_hash))
     if not session or session.is_revoked:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-    if session.expires_at < datetime.now(timezone.utc):
+    if session.expires_at < datetime.utcnow():
         session.is_revoked = True
         db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
@@ -110,7 +110,7 @@ def rotate_refresh_token(db: Session, refresh_token: str) -> tuple[AuthResponse,
         db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
     session.is_revoked = True
-    session.rotated_at = datetime.now(timezone.utc)
+    session.rotated_at = datetime.utcnow()
     access_token = create_access_token(subject=str(user.id), extra={"tv": int(user.token_version)})
     new_refresh = _issue_refresh_session(db=db, user=user)
     settings = get_settings()
