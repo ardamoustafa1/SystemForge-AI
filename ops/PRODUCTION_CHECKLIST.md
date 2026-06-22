@@ -24,6 +24,26 @@ The `migration-job.yaml` is configured with an `initContainer` that uses `pg_isr
 
 ## 4. Ingress, TLS, & Security Headers
 The Helm chart is configured by default to utilize `cert-manager.io/cluster-issuer: "letsencrypt-prod"`.
+- **Domain configuration:** `systemforge.local` is used as a placeholder in `values.yaml`. You MUST override this with your actual production domain (e.g., `app.yourcompany.com`) during deployment.
 - Ensure `cert-manager` is installed on your cluster.
 - The NGINX Ingress controller will inject strict security headers (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`).
 - Ensure `CORS_ORIGINS` are locked to your specific frontend URL.
+
+## 5. Web Application Firewall (WAF) & Rate Limiting
+For enterprise deployments, protect your Ingress controller with a WAF (e.g., AWS WAF, Cloudflare, or Azure Front Door).
+- Configure rules to block common OWASP Top 10 vulnerabilities (SQLi, XSS).
+- The application includes an internal Redis-backed rate limiter, but edge-level rate limiting is strongly recommended to protect against volumetric DDoS attacks.
+
+## 6. Observability (Monitoring & Alerting)
+SystemForge AI is instrumented with OpenTelemetry.
+- Deploy an APM tool (Datadog, New Relic, or Prometheus/Grafana) to scrape the metrics endpoints.
+- Configure alerts for:
+  - Error rates exceeding 1% on generation endpoints.
+  - Redis memory utilization > 80%.
+  - LLM API latency or timeout spikes.
+
+## 7. Disaster Recovery & Incident Response
+Establish a clear Disaster Recovery (DR) plan:
+- **Database Backups**: Verify automated daily snapshots and test restoration at least quarterly.
+- **Incident Response Playbook**: Document the procedure for rotating compromised `JWT_SECRET` and `OPENAI_API_KEY`.
+- **Zero-Downtime Deployment**: The worker nodes are stateless and can be scaled independently, but ensure your database migrations are backward-compatible.
