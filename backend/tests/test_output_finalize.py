@@ -134,4 +134,6 @@ def test_finalize_backfills_senior_depth_for_multi_region_and_security():
     assert any("load shedding" in item.lower() for item in out.ai_architecture.queue_and_backpressure)
     assert any("zero-trust" in item.lower() for item in out.security_architecture.auth_flow)
     assert any("rbac/abac" in item.lower() for item in out.security_architecture.auth_flow)
-    assert any("encrypt data in transit" in item.lower() for item in out.security_architecture.secrets_and_key_management)
+    assert any(
+        "encrypt data in transit" in item.lower() for item in out.security_architecture.secrets_and_key_management
+    )
