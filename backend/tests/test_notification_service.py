@@ -33,7 +33,9 @@ class FakeRedis:
         z.pop(member, None)
         return 1
 
-    async def eval(self, script: str, numkeys: int, zset_key: str, stream_key: str, now_ms: str, max_count: str, maxlen: str):
+    async def eval(
+        self, script: str, numkeys: int, zset_key: str, stream_key: str, now_ms: str, max_count: str, maxlen: str
+    ):
         due = await self.zrangebyscore(zset_key, 0, int(now_ms), 0, int(max_count))
         promoted = 0
         for raw in due:
@@ -108,4 +110,3 @@ async def test_send_with_mock_providers_allows_fallback_when_enabled():
     )
     assert len(results) == 2
     assert {item.provider for item in results} == {"fcm", "apns"}
-
