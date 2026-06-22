@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy import desc, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
@@ -534,6 +534,7 @@ def list_design_comments_for_user(
     _get_workspace_design(db, design_id, workspace_member)
     rows = (
         db.query(DesignComment)
+        .options(selectinload(DesignComment.user))
         .filter(DesignComment.design_id == design_id)
         .order_by(DesignComment.created_at.asc())
         .all()
