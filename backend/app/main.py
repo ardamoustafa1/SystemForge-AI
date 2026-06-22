@@ -3,8 +3,7 @@ import logging
 import sentry_sdk
 import time
 
-from fastapi import FastAPI
-from fastapi import HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,6 +16,7 @@ from app.core.errors import (
 )
 from app.core.lifespan import app_lifespan
 from app.core.metrics import observe_request
+from app.core.telemetry import setup_telemetry
 
 settings = get_settings()
 
@@ -41,6 +41,11 @@ if settings.sentry_dsn:
     )
 
 app = FastAPI(title=settings.app_name, lifespan=app_lifespan)
+setup_telemetry(
+    app,
+    app_name=settings.app_name,
+    otlp_endpoint=settings.otel_exporter_otlp_endpoint,
+)
 logger = logging.getLogger("systemforge.api")
 
 app.add_middleware(
@@ -82,7 +87,9 @@ async def request_context_middleware(request: Request, call_next):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
     elapsed_ms = int((time.perf_counter() - started) * 1000)
-    observe_request(path=request.url.path, method=request.method, status_code=response.status_code, elapsed_ms=elapsed_ms)
+    observe_request(
+        path=request.url.path, method=request.method, status_code=response.status_code, elapsed_ms=elapsed_ms
+    )
     logger.info(
         "request_completed",
         extra={
