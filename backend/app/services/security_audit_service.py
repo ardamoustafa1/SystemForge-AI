@@ -6,7 +6,9 @@ from datetime import datetime, timezone
 from app.core.redis import get_redis_client
 
 
-async def log_security_audit(action: str, actor_user_id: int, workspace_id: int | None, metadata: dict | None = None) -> None:
+async def log_security_audit(
+    action: str, actor_user_id: int, workspace_id: int | None, metadata: dict | None = None
+) -> None:
     redis = get_redis_client()
     payload = {
         "ts": datetime.now(timezone.utc).isoformat(),
@@ -16,7 +18,9 @@ async def log_security_audit(action: str, actor_user_id: int, workspace_id: int 
         "metadata": metadata or {},
     }
     try:
-        await redis.xadd("security:audit:events", {"payload_json": json.dumps(payload)}, maxlen=100000, approximate=True)
+        await redis.xadd(
+            "security:audit:events", {"payload_json": json.dumps(payload)}, maxlen=100000, approximate=True
+        )
     except Exception:
         return
 
@@ -37,4 +41,3 @@ async def list_security_audit(limit: int = 200) -> list[dict]:
         except Exception:
             continue
     return out
-
