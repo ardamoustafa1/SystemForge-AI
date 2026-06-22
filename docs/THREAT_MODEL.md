@@ -1,33 +1,35 @@
-# Threat Model (STRIDE Summary)
+# Threat Model & Risk Analysis (STRIDE)
 
-## Assets
-- User sessions (JWT cookies)
-- Design artifacts and exports
-- Workspace membership/roles
-- Notification device tokens
+This document outlines the security posture of SystemForge AI based on the STRIDE framework.
 
-## Key Threats and Mitigations
+## 🛡️ Trust Boundaries
+1. **Public Internet -> Frontend / Backend Gateway**: Terminated via HTTPS/WAF.
+2. **Backend Gateway -> Internal Services**: Trusted network (VPC/K8s).
+3. **Backend -> Database / Redis**: Authenticated TLS connections.
+4. **Backend -> LLM Provider**: Secure outbound API connections.
 
-### Spoofing
-- Threat: stolen JWT token reuse.
-- Mitigation: token version claim (`tv`) + revocation on logout, WS token version validation.
+## 🚨 STRIDE Analysis
 
-### Tampering
-- Threat: cross-workspace access attempts.
-- Mitigation: workspace-first authz dependency and centralized policy checks.
+### Spoofing (Authentication)
+- **Threat**: Attackers forging JWTs or session hijacking.
+- **Mitigation**: RS256 asymmetrical JWT signatures. Strict `HttpOnly` and `Secure` cookie attributes. Replay attacks are mitigated via token rotation and jti blacklisting in Redis.
 
-### Repudiation
-- Threat: missing request/event traceability.
-- Mitigation: request IDs, worker event metrics, stream event logs.
+### Tampering (Integrity)
+- **Threat**: Modifying payload data in transit.
+- **Mitigation**: TLS 1.2+ mandatory. Content-Security-Policy (CSP) headers block malicious scripts. Database is protected by role-based access control (RBAC).
 
-### Information Disclosure
-- Threat: token leakage in logs.
-- Mitigation: notification token redaction.
+### Repudiation (Non-repudiation)
+- **Threat**: Malicious actor claiming they didn't perform an action.
+- **Mitigation**: Critical actions (workspace creation, design deletion) emit Audit Logs via the Outbox pattern.
 
-### Denial of Service
-- Threat: WS flood and export-heavy sync workloads.
-- Mitigation: websocket rate limiting, queued export jobs, rate limits and usage quotas.
+### Information Disclosure (Confidentiality)
+- **Threat**: Leaking proprietary design architecture or secrets.
+- **Mitigation**: Row-level tenant isolation logic in SQLAlchemy queries. Hardcoded secrets are blocked by pre-commit hooks and GitHub Advanced Security.
 
-### Elevation of Privilege
-- Threat: role bypass on design endpoints.
-- Mitigation: centralized policy layer, workspace role enforcement.
+### Denial of Service (Availability)
+- **Threat**: Brute-force attacks or massive LLM prompt injection causing resource starvation.
+- **Mitigation**: Multi-tier rate limiting via Redis. LLM Prompt Abuse Policy is set to `challenge` or `block`. Kubernetes HPA auto-scales pods based on CPU utilization.
+
+### Elevation of Privilege (Authorization)
+- **Threat**: Viewer attempting to mutate a design or access admin settings.
+- **Mitigation**: Strict Pydantic-based endpoint RBAC. `WorkspaceMember` roles (Admin, Editor, Viewer) are checked on every mutating request.
