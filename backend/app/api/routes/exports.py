@@ -73,7 +73,9 @@ async def get_design_export(
     workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
 ):
     client_ip = request.client.host if request.client else "unknown"
-    await enforce_rate_limit(scope="design-export-user", identifier=str(workspace_member.user_id), limit=40, window_seconds=60)
+    await enforce_rate_limit(
+        scope="design-export-user", identifier=str(workspace_member.user_id), limit=40, window_seconds=60
+    )
     await enforce_rate_limit(scope="design-export-ip", identifier=client_ip, limit=80, window_seconds=60)
     design, design_input, design_output = get_design_artifact_for_user(
         db=db, workspace_member=workspace_member, design_id=design_id
@@ -121,28 +123,36 @@ def create_design_export_job(
     if export_format not in {"pdf", "markdown"}:
         raise HTTPException(status_code=400, detail="Unsupported export format for async jobs")
     client_ip = request.client.host if request.client else "unknown"
-    run_async(enforce_rate_limit(scope="design-export-job-user", identifier=str(workspace_member.user_id), limit=15, window_seconds=60))
+    run_async(
+        enforce_rate_limit(
+            scope="design-export-job-user", identifier=str(workspace_member.user_id), limit=15, window_seconds=60
+        )
+    )
     run_async(enforce_rate_limit(scope="design-export-job-ip", identifier=client_ip, limit=30, window_seconds=60))
-    run_async(enforce_idempotency(
-        scope="design-export-job",
-        owner_key=f"{workspace_member.workspace_id}:{design_id}:{workspace_member.user_id}:{export_format}",
-        idempotency_key=idempotency_key,
-        ttl_seconds=180,
-    ))
+    run_async(
+        enforce_idempotency(
+            scope="design-export-job",
+            owner_key=f"{workspace_member.workspace_id}:{design_id}:{workspace_member.user_id}:{export_format}",
+            idempotency_key=idempotency_key,
+            ttl_seconds=180,
+        )
+    )
     design, design_input, design_output = get_design_artifact_for_user(
         db=db, workspace_member=workspace_member, design_id=design_id
     )
     parsed_input = DesignInputPayload.model_validate(design_input.payload)
     parsed_output = DesignOutputPayload.model_validate(design_output.payload)
-    job_id = run_async(enqueue_export_job(
-        design_title=design.title,
-        design_input=parsed_input,
-        design_output=parsed_output,
-        export_format=export_format,  # type: ignore[arg-type]
-        workspace_id=workspace_member.workspace_id,
-        user_id=workspace_member.user_id,
-        design_id=design_id,
-    ))
+    job_id = run_async(
+        enqueue_export_job(
+            design_title=design.title,
+            design_input=parsed_input,
+            design_output=parsed_output,
+            export_format=export_format,  # type: ignore[arg-type]
+            workspace_id=workspace_member.workspace_id,
+            user_id=workspace_member.user_id,
+            design_id=design_id,
+        )
+    )
     return ExportJobCreateResponse(job_id=job_id, status="queued")
 
 
@@ -199,7 +209,9 @@ async def get_scaffold_export(
     workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
 ):
     client_ip = request.client.host if request.client else "unknown"
-    await enforce_rate_limit(scope="scaffold-export-user", identifier=str(workspace_member.user_id), limit=10, window_seconds=60)
+    await enforce_rate_limit(
+        scope="scaffold-export-user", identifier=str(workspace_member.user_id), limit=10, window_seconds=60
+    )
     await enforce_rate_limit(scope="scaffold-export-ip", identifier=client_ip, limit=20, window_seconds=60)
 
     design, design_input, design_output = get_design_artifact_for_user(
@@ -207,6 +219,7 @@ async def get_scaffold_export(
     )
     if not design_output:
         from fastapi import HTTPException, status as st
+
         raise HTTPException(status_code=st.HTTP_400_BAD_REQUEST, detail="Design has no generated output yet")
 
     parsed_input = DesignInputPayload.model_validate(design_input.payload)
@@ -234,7 +247,9 @@ async def get_terraform_export(
     workspace_member: WorkspaceMember = Depends(get_active_workspace_member),
 ):
     client_ip = request.client.host if request.client else "unknown"
-    await enforce_rate_limit(scope="tf-export-user", identifier=str(workspace_member.user_id), limit=10, window_seconds=60)
+    await enforce_rate_limit(
+        scope="tf-export-user", identifier=str(workspace_member.user_id), limit=10, window_seconds=60
+    )
     await enforce_rate_limit(scope="tf-export-ip", identifier=client_ip, limit=20, window_seconds=60)
 
     design, design_input, design_output = get_design_artifact_for_user(
@@ -242,6 +257,7 @@ async def get_terraform_export(
     )
     if not design_output:
         from fastapi import HTTPException, status as st
+
         raise HTTPException(status_code=st.HTTP_400_BAD_REQUEST, detail="Design has no generated output yet")
 
     parsed_input = DesignInputPayload.model_validate(design_input.payload)
@@ -273,7 +289,9 @@ async def get_tasks_csv_export(
     import io
 
     client_ip = request.client.host if request.client else "unknown"
-    await enforce_rate_limit(scope="csv-export-user", identifier=str(workspace_member.user_id), limit=20, window_seconds=60)
+    await enforce_rate_limit(
+        scope="csv-export-user", identifier=str(workspace_member.user_id), limit=20, window_seconds=60
+    )
     await enforce_rate_limit(scope="csv-export-ip", identifier=client_ip, limit=40, window_seconds=60)
 
     design, design_input, design_output = get_design_artifact_for_user(
@@ -281,6 +299,7 @@ async def get_tasks_csv_export(
     )
     if not design_output:
         from fastapi import HTTPException, status as st
+
         raise HTTPException(status_code=st.HTTP_400_BAD_REQUEST, detail="Design has no generated output yet")
 
     parsed_output = DesignOutputPayload.model_validate(design_output.payload)
@@ -292,12 +311,26 @@ async def get_tasks_csv_export(
     if provider.lower() == "linear":
         writer.writerow(["Title", "Description", "Priority", "Status"])
         for item in checklist:
-            writer.writerow([item, f"Implementation task imported from SystemForge AI\\n\\nProject: {design.title}", "Medium", "Todo"])
+            writer.writerow(
+                [
+                    item,
+                    f"Implementation task imported from SystemForge AI\\n\\nProject: {design.title}",
+                    "Medium",
+                    "Todo",
+                ]
+            )
     else:
         # Default Jira format
         writer.writerow(["Summary", "Issue Type", "Description", "Priority"])
         for item in checklist:
-            writer.writerow([item, "Task", f"Implementation task imported from SystemForge AI\\n\\nProject: {design.title}", "Medium"])
+            writer.writerow(
+                [
+                    item,
+                    "Task",
+                    f"Implementation task imported from SystemForge AI\\n\\nProject: {design.title}",
+                    "Medium",
+                ]
+            )
 
     fn = f"{_safe_filename(design.title)}-tasks.csv"
 
@@ -322,15 +355,23 @@ def analyze_design_cost(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
     client_ip = request.client.host if request.client else "unknown"
-    run_async(enforce_rate_limit(scope="cost-analysis-user", identifier=str(workspace_member.user_id), limit=30, window_seconds=60))
+    run_async(
+        enforce_rate_limit(
+            scope="cost-analysis-user", identifier=str(workspace_member.user_id), limit=30, window_seconds=60
+        )
+    )
     run_async(enforce_rate_limit(scope="cost-analysis-ip", identifier=client_ip, limit=60, window_seconds=60))
-    run_async(enforce_idempotency(
-        scope="cost-analysis",
-        owner_key=f"{workspace_member.workspace_id}:{workspace_member.user_id}:{design_id}",
-        idempotency_key=idempotency_key,
-        ttl_seconds=90,
-    ))
-    design, _, design_output = get_design_artifact_for_user(db=db, workspace_member=workspace_member, design_id=design_id)
+    run_async(
+        enforce_idempotency(
+            scope="cost-analysis",
+            owner_key=f"{workspace_member.workspace_id}:{workspace_member.user_id}:{design_id}",
+            idempotency_key=idempotency_key,
+            ttl_seconds=90,
+        )
+    )
+    design, _, design_output = get_design_artifact_for_user(
+        db=db, workspace_member=workspace_member, design_id=design_id
+    )
     parsed_output = DesignOutputPayload.model_validate(design_output.payload)
     estimated = parsed_output.estimated_cloud_cost
     if not estimated:
@@ -342,7 +383,9 @@ def analyze_design_cost(
             yearly_usd_max=0,
             confidence="low",
             breakdown=["Base design does not include a cloud cost baseline yet."],
-            optimization_recommendations=["Regenerate design with more explicit traffic assumptions for stronger estimates."],
+            optimization_recommendations=[
+                "Regenerate design with more explicit traffic assumptions for stronger estimates."
+            ],
         )
 
     reliability_factor = {"lean": 0.85, "balanced": 1.0, "critical": 1.35}[body.reliability_profile]
