@@ -1,16 +1,23 @@
-from fastapi import APIRouter, Depends, Request, Response, status, HTTPException
+from fastapi import APIRouter, Depends, Request, Response, status, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
+import secrets
+import logging
+import re
+from datetime import datetime, timezone
 
 from app.auth.deps import enforce_csrf, get_current_user
 from app.auth.service import login_user, register_user, rotate_refresh_token, list_active_sessions, revoke_session
 from app.core.config import get_settings
 from app.core.rate_limiter import clear_rate_limit, enforce_rate_limit
 from app.db.session import get_db
-from app.models import User, RefreshTokenSession
+from app.models import User, RefreshTokenSession, UserSettings
 from app.schemas.auth import AuthResponse, CurrentUserResponse, LoginRequest, RegisterRequest
 from pydantic import BaseModel
 from app.services.security_audit_service import log_security_audit
 from app.core.async_bridge import run_async
+from app.core.security import hash_password, verify_password
+from app.core.redis import get_redis_client
+from app.core.email import send_password_reset_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -57,7 +64,7 @@ async def login(payload: LoginRequest, request: Request, response: Response, db:
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         max_age=settings.refresh_exp_days * 24 * 60 * 60,
-        path="/",
+        path="/api/auth/refresh",
     )
     return auth_payload
 
@@ -81,7 +88,7 @@ def logout(
     )
     settings = get_settings()
     response.delete_cookie(settings.auth_cookie_name, path="/")
-    response.delete_cookie(settings.refresh_cookie_name, path="/")
+    response.delete_cookie(settings.refresh_cookie_name, path="/api/auth/refresh")
     response.delete_cookie(settings.csrf_cookie_name, path="/")
     return {"ok": True}
 
@@ -122,13 +129,36 @@ async def refresh_session(
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         max_age=settings.refresh_exp_days * 24 * 60 * 60,
-        path="/",
+        path="/api/auth/refresh",
     )
     return auth_payload
 
 
 @router.get("/me", response_model=CurrentUserResponse)
 def me(user: User = Depends(get_current_user)):
+    return CurrentUserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        default_workspace_id=user.default_workspace_id,
+    )
+
+
+class UpdateUserRequest(BaseModel):
+    full_name: str | None = None
+
+
+@router.patch("/me", response_model=CurrentUserResponse)
+def update_me(
+    payload: UpdateUserRequest,
+    _: None = Depends(enforce_csrf),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if payload.full_name is not None and payload.full_name.strip():
+        user.full_name = payload.full_name.strip()
+        db.commit()
+        db.refresh(user)
     return CurrentUserResponse(
         id=user.id,
         email=user.email,
@@ -175,17 +205,11 @@ async def generate_api_key(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.core.rate_limiter import enforce_rate_limit
     client_ip = request.client.host if request.client else "unknown"
     await enforce_rate_limit(scope="auth-apikey-generate", identifier=str(user.id), limit=5, window_seconds=86400)
     
-    import secrets
-    from datetime import datetime, timezone
-    from passlib.hash import bcrypt
-    from app.models.design import UserSettings
-
     api_key = f"sf_{secrets.token_urlsafe(32)}"
-    api_key_hash = bcrypt.hash(api_key)
+    api_key_hash = hash_password(api_key)
     last4 = api_key[-4:]
 
     settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
@@ -222,8 +246,6 @@ def get_api_key_status(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.models.design import UserSettings
-
     settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
     if not settings or not settings.api_key_last4:
         return ApiKeyStatusResponse(last4=None, created_at=None, revoked_at=None)
@@ -241,9 +263,6 @@ def revoke_api_key(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from datetime import datetime, timezone
-    from app.models.design import UserSettings
-
     settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
     if settings and settings.api_key_hash:
         settings.api_key_revoked_at = datetime.now(timezone.utc)
@@ -264,24 +283,18 @@ class ResetPasswordRequest(BaseModel):
 
 
 @router.post("/reset-password")
-async def reset_password(payload: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
-    from app.core.rate_limiter import enforce_rate_limit
+async def reset_password(payload: ResetPasswordRequest, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     client_ip = request.client.host if request.client else "unknown"
     await enforce_rate_limit(scope="auth-password-reset", identifier=client_ip, limit=3, window_seconds=3600)
     
-    import secrets
-    import logging
-    from app.core.redis import get_redis_client
-
     logger = logging.getLogger("systemforge.auth")
     user = db.query(User).filter(User.email == payload.email, User.is_active.is_(True)).first()
     if user:
         token = secrets.token_urlsafe(32)
         redis_client = get_redis_client()
         await redis_client.setex(f"pwd_reset:{token}", 3600, user.id)
-        logger.info(
-            f"\n*** SIMULATED EMAIL ***\nTo: {payload.email}\nSubject: Password Reset\nLink: https://systemforge.local/reset-password?token={token}\n***\n"
-        )
+        
+        background_tasks.add_task(send_password_reset_email, payload.email, token)
 
     return {"ok": True, "message": "If the email exists, a password reset link has been sent."}
 
@@ -293,14 +306,9 @@ class ResetPasswordConfirmRequest(BaseModel):
 
 @router.post("/reset-password/confirm")
 async def reset_password_confirm(payload: ResetPasswordConfirmRequest, request: Request, db: Session = Depends(get_db)):
-    from app.core.rate_limiter import enforce_rate_limit
     client_ip = request.client.host if request.client else "unknown"
     await enforce_rate_limit(scope="auth-password-reset-confirm", identifier=client_ip, limit=5, window_seconds=3600)
     
-    from app.core.redis import get_redis_client
-    from passlib.hash import bcrypt
-    import re
-
     if (
         len(payload.new_password) < 8
         or not re.search(r"[A-Za-z]", payload.new_password)
@@ -319,7 +327,7 @@ async def reset_password_confirm(payload: ResetPasswordConfirmRequest, request: 
     if not user:
         raise HTTPException(status_code=400, detail="User not found")
 
-    user.password_hash = bcrypt.hash(payload.new_password)
+    user.password_hash = hash_password(payload.new_password)
     user.token_version = int(user.token_version) + 1
     db.commit()
 
@@ -341,13 +349,10 @@ async def delete_account(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.core.rate_limiter import enforce_rate_limit
     client_ip = request.client.host if request.client else "unknown"
     await enforce_rate_limit(scope="auth-delete-account", identifier=str(user.id), limit=3, window_seconds=86400)
     
-    from passlib.hash import bcrypt
-
-    if not bcrypt.verify(payload.password, user.password_hash):
+    if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=400, detail="Incorrect password confirmation")
 
     user.is_active = False
