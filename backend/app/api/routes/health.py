@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
 import redis.asyncio as redis
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -25,8 +25,11 @@ async def readiness(
     return {"status": "ready", "checks": {"database": "ok", "redis": "ok"}}
 
 
-@router.get("/metrics")
-def metrics():
+@router.get("/metrics", include_in_schema=False)
+def metrics(x_metrics_token: str | None = Header(default=None)):
+    settings = get_settings()
+    if x_metrics_token != settings.metrics_secret:
+        raise HTTPException(status_code=401, detail="Unauthorized metrics access")
     return Response(content=render_prometheus(), media_type="text/plain; version=0.0.4")
 
 
