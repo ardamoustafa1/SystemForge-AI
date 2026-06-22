@@ -10,7 +10,7 @@ from app.realtime.protocol import ClientEventEnvelope
 from app.workers.delivery_worker import DeliveryWorker
 from app.workers.outbox_relay import OutboxRelayWorker
 from app.realtime.presence_service import presence_service
-from conftest import TestingSessionLocal
+from tests.conftest import TestingSessionLocal
 
 
 class FakeRedis:
