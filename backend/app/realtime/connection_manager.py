@@ -66,5 +66,16 @@ class ConnectionManager:
         async with self._lock:
             return len(self._socket_to_ws)
 
+    async def disconnect_all(self) -> None:
+        async with self._lock:
+            for socket_id, websocket in list(self._socket_to_ws.items()):
+                try:
+                    await websocket.close(code=1001, reason="Server shutting down")
+                except Exception:
+                    pass
+            self._socket_to_ws.clear()
+            self._socket_to_user.clear()
+            self._user_to_sockets.clear()
+
 
 connection_manager = ConnectionManager()
