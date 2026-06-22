@@ -6,7 +6,9 @@ from datetime import datetime, timezone
 from app.core.redis import get_redis_client
 
 
-async def record_abuse_event(event_type: str, actor: str, severity: int, metadata: dict[str, str] | None = None) -> None:
+async def record_abuse_event(
+    event_type: str, actor: str, severity: int, metadata: dict[str, str] | None = None
+) -> None:
     redis = get_redis_client()
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     key = f"abuse:counter:{ts}:{event_type}"
@@ -44,4 +46,3 @@ async def get_abuse_summary(days: int = 7) -> dict[str, int]:
         except Exception:
             continue
     return totals
-
