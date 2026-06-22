@@ -38,7 +38,9 @@ def _default_questions(inp: DesignInputPayload) -> list[str]:
 
 def _default_runtime_topology(inp: DesignInputPayload) -> dict:
     return {
-        "architecture_style": "Modular service boundary with async workers" if inp.real_time_required else "Modular application with async workers",
+        "architecture_style": "Modular service boundary with async workers"
+        if inp.real_time_required
+        else "Modular application with async workers",
         "deployable_units": [
             "API gateway / edge",
             "Application service",
@@ -58,9 +60,7 @@ def _default_runtime_topology(inp: DesignInputPayload) -> dict:
 def _default_data_flows(inp: DesignInputPayload) -> dict:
     failover_flow = "Retries and replays are driven from durable state, not in-memory assumptions"
     if inp.deployment_scope in {"multi-region", "global"}:
-        failover_flow = (
-            "Region incident flow: health checks trigger traffic drain, promote replica, and recover within stated RPO/RTO targets"
-        )
+        failover_flow = "Region incident flow: health checks trigger traffic drain, promote replica, and recover within stated RPO/RTO targets"
     return {
         "request_response_flow": ["Client -> API gateway -> application service -> datastore -> response"],
         "asynchronous_event_flow": ["Application -> queue/outbox -> worker -> side effects -> publish/update"],
@@ -233,9 +233,7 @@ def finalize_design_output(
     merged = DesignOutputPayload.model_validate(data)
     auto_warnings = analyze_input_consistency(inp, merged)
     diagram_warnings = mermaid_lint_warnings(data.get("suggested_mermaid_diagram") or "")
-    combined = list(
-        dict.fromkeys([*(data.get("consistency_warnings") or []), *auto_warnings, *diagram_warnings])
-    )
+    combined = list(dict.fromkeys([*(data.get("consistency_warnings") or []), *auto_warnings, *diagram_warnings]))
     data["consistency_warnings"] = combined
 
     if not data.get("assumptions"):
