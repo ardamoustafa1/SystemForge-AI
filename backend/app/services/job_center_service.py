@@ -34,4 +34,3 @@ async def list_jobs(workspace_id: int, user_id: int) -> list[dict]:
         except Exception:
             continue
     return out
-
