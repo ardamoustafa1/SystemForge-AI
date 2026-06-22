@@ -1,11 +1,16 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { AppProviders } from "@/app/providers";
 import { getEnv } from "@/lib/env";
 
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+
 const { appName } = getEnv();
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  ),
   title: {
     template: `%s | ${appName}`,
     default: appName,
@@ -33,10 +38,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className={`${inter.variable} dark`}>
+      <body className="font-sans antialiased">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
