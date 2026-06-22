@@ -1,8 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useI18n } from "@/i18n/i18n-context";
-import { User, Palette, Key, Check, Users, Crown, Pencil, Eye, Trash2, UserPlus, Mail, ShieldAlert } from "lucide-react";
+import {
+  User,
+  Palette,
+  Key,
+  Check,
+  Users,
+  Crown,
+  Pencil,
+  Eye,
+  Trash2,
+  UserPlus,
+  Mail,
+  ShieldAlert,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,16 +29,33 @@ type UserSettings = {
   default_mode: string;
 };
 
-const ROLE_META: Record<WorkspaceRole, { label: string; icon: React.ElementType; color: string }> = {
-  admin: { label: "Admin", icon: Crown, color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  editor: { label: "Editor", icon: Pencil, color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-  viewer: { label: "Viewer", icon: Eye, color: "text-white/40 bg-white/5 border-white/10" },
+const ROLE_META: Record<
+  WorkspaceRole,
+  { label: string; icon: React.ElementType; color: string }
+> = {
+  admin: {
+    label: "Admin",
+    icon: Crown,
+    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  },
+  editor: {
+    label: "Editor",
+    icon: Pencil,
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+  },
+  viewer: {
+    label: "Viewer",
+    icon: Eye,
+    color: "text-white/40 bg-white/5 border-white/10",
+  },
 };
 
 function RoleBadge({ role }: { role: WorkspaceRole }) {
   const meta = ROLE_META[role];
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${meta.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${meta.color}`}
+    >
       <meta.icon className="h-2.5 w-2.5" />
       {meta.label}
     </span>
@@ -62,14 +92,20 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
             <UserPlus className="h-4 w-4 text-white/60" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">Invite Team Member</h3>
-            <p className="text-xs text-white/40">They need an existing SystemForge account.</p>
+            <h3 className="text-base font-semibold text-white">
+              Invite Team Member
+            </h3>
+            <p className="text-xs text-white/40">
+              They need an existing SystemForge account.
+            </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Email Address</label>
+            <label className="text-xs font-medium text-white/60 uppercase tracking-wider">
+              Email Address
+            </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
               <input
@@ -85,7 +121,9 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Role</label>
+            <label className="text-xs font-medium text-white/60 uppercase tracking-wider">
+              Role
+            </label>
             <div className="grid grid-cols-3 gap-2">
               {(["admin", "editor", "viewer"] as WorkspaceRole[]).map((r) => {
                 const meta = ROLE_META[r];
@@ -95,7 +133,9 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
                     type="button"
                     onClick={() => setRole(r)}
                     className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 text-xs font-semibold uppercase tracking-wider transition-all ${
-                      role === r ? meta.color : "border-white/5 bg-transparent text-white/40 hover:border-white/10 hover:text-white/60"
+                      role === r
+                        ? meta.color
+                        : "border-white/5 bg-transparent text-white/40 hover:border-white/10 hover:text-white/60"
                     }`}
                   >
                     <meta.icon className="h-3.5 w-3.5" />
@@ -106,13 +146,25 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          {error && <p className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-400">{error}</p>}
+          {error && (
+            <p className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-400">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm text-white/60 hover:text-white hover:border-white/20 transition-colors">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm text-white/60 hover:text-white hover:border-white/20 transition-colors"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={busy} className="flex-1 rounded-xl bg-white py-2.5 text-sm font-semibold text-black hover:bg-white/90 disabled:opacity-50 transition-colors">
+            <button
+              type="submit"
+              disabled={busy}
+              className="flex-1 rounded-xl bg-white py-2.5 text-sm font-semibold text-black hover:bg-white/90 disabled:opacity-50 transition-colors"
+            >
               {busy ? "Sending..." : "Send Invite"}
             </button>
           </div>
@@ -124,18 +176,81 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
 
 export default function SettingsPage() {
   const { t } = useI18n();
-  const { activeWorkspace, activeRole, members, removeMember, updateMemberRole } = useWorkspace();
+  const {
+    activeWorkspace,
+    activeRole,
+    members,
+    removeMember,
+    updateMemberRole,
+  } = useWorkspace();
   const [activeTab, setActiveTab] = useState("profile");
   const [showInvite, setShowInvite] = useState(false);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
 
-  const { data: settings, mutate } = useSWR<UserSettings>("/users/me/settings", api);
-  const { data: me } = useSWR<AuthUser>("/auth/me", api);
-  const { data: sessions, mutate: mutateSessions } = useSWR<{ items: { id: number; is_revoked: boolean; created_at: string; expires_at: string }[] }>("/auth/sessions", api);
-  const { data: abuseSummary } = useSWR<Record<string, number>>("/security/abuse-summary?days=7", api);
-  const { data: anomalySummary } = useSWR<{ anomaly_score: number; anomalies: string[] }>("/security/anomaly-summary", api);
-  const { data: auditTrail } = useSWR<{ items: { ts: string; action: string; actor_user_id: number; metadata?: Record<string, unknown> }[] }>("/security/audit-trail?limit=20", api);
-  const { data: apiVersions } = useSWR<{ current: string; compatibility: string; sunset_at?: string | null }>("/health/api-versions", api);
+  const { data: settings, mutate } = useSWR<UserSettings>(
+    "/users/me/settings",
+    api,
+  );
+  const { data: me, mutate: mutateMe } = useSWR<AuthUser>("/auth/me", api);
+  const { data: apiStatus, mutate: mutateApiStatus } = useSWR<{
+    last4: string | null;
+    created_at: string | null;
+    revoked_at: string | null;
+  }>("/auth/api-keys", api);
+
+  const [fullName, setFullName] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (me?.full_name && !fullName) {
+      setFullName(me.full_name);
+    }
+  }, [me]);
+
+  const handleSaveProfile = async () => {
+    if (!fullName.trim() || fullName === me?.full_name) return;
+    setIsSavingProfile(true);
+    try {
+      await api("/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({ full_name: fullName.trim() }),
+      });
+      mutateMe();
+    } catch (err) {
+      alert("Failed to update profile.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+  const { data: sessions, mutate: mutateSessions } = useSWR<{
+    items: {
+      id: number;
+      is_revoked: boolean;
+      created_at: string;
+      expires_at: string;
+    }[];
+  }>("/auth/sessions", api);
+  const { data: abuseSummary } = useSWR<Record<string, number>>(
+    "/security/abuse-summary?days=7",
+    api,
+  );
+  const { data: anomalySummary } = useSWR<{
+    anomaly_score: number;
+    anomalies: string[];
+  }>("/security/anomaly-summary", api);
+  const { data: auditTrail } = useSWR<{
+    items: {
+      ts: string;
+      action: string;
+      actor_user_id: number;
+      metadata?: Record<string, unknown>;
+    }[];
+  }>("/security/audit-trail?limit=20", api);
+  const { data: apiVersions } = useSWR<{
+    current: string;
+    compatibility: string;
+    sunset_at?: string | null;
+  }>("/health/api-versions", api);
 
   const updateSetting = async (key: keyof UserSettings, value: string) => {
     if (!settings) return;
@@ -168,12 +283,21 @@ export default function SettingsPage() {
       {newApiKey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0d0d0d] p-8 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.9)]">
-            <h3 className="text-base font-semibold text-white mb-2">Your New API Key</h3>
-            <p className="text-sm text-white/60 mb-4">Please copy this key now. You will not be able to see it again.</p>
+            <h3 className="text-base font-semibold text-white mb-2">
+              Your New API Key
+            </h3>
+            <p className="text-sm text-white/60 mb-4">
+              Please copy this key now. You will not be able to see it again.
+            </p>
             <div className="p-3 bg-white/5 border border-white/10 rounded-xl mb-6">
-              <code className="text-sm text-emerald-400 break-all">{newApiKey}</code>
+              <code className="text-sm text-emerald-400 break-all">
+                {newApiKey}
+              </code>
             </div>
-            <button onClick={() => setNewApiKey(null)} className="w-full rounded-xl bg-white py-2.5 text-sm font-semibold text-black hover:bg-white/90 transition-colors">
+            <button
+              onClick={() => setNewApiKey(null)}
+              className="w-full rounded-xl bg-white py-2.5 text-sm font-semibold text-black hover:bg-white/90 transition-colors"
+            >
               I have copied it
             </button>
           </div>
@@ -195,7 +319,9 @@ export default function SettingsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id ? "bg-white/10 text-white" : "text-white/50 hover:text-white/90 hover:bg-white/[0.05]"
+                activeTab === tab.id
+                  ? "bg-white/10 text-white"
+                  : "text-white/50 hover:text-white/90 hover:bg-white/[0.05]"
               }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -211,37 +337,85 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-32 bg-indigo-500/5 blur-[100px] rounded-full pointer-events-none" />
-                <h3 className="text-lg font-medium text-white/90">Personal Information</h3>
-                <p className="text-sm text-white/40 mt-1">Manage your account details and email address.</p>
+                <h3 className="text-lg font-medium text-white/90">
+                  Personal Information
+                </h3>
+                <p className="text-sm text-white/40 mt-1">
+                  Manage your account details and email address.
+                </p>
                 <div className="mt-8 space-y-5">
                   <div className="grid gap-2">
-                    <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Full Name</label>
-                    <Input value={me?.full_name ?? ""} readOnly className="bg-white/[0.02] border-white/10 text-white h-11" />
+                    <label className="text-xs font-medium text-white/70 uppercase tracking-wider">
+                      Full Name
+                    </label>
+                    <Input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="bg-white/[0.02] border-white/10 text-white h-11"
+                    />
                   </div>
                   <div className="grid gap-2">
-                    <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Email Address</label>
-                    <Input value={me?.email ?? ""} readOnly className="bg-transparent border-white/5 text-white/50 h-11 opacity-50 cursor-not-allowed" />
+                    <label className="text-xs font-medium text-white/70 uppercase tracking-wider">
+                      Email Address
+                    </label>
+                    <Input
+                      value={me?.email ?? ""}
+                      readOnly
+                      className="bg-transparent border-white/5 text-white/50 h-11 opacity-50 cursor-not-allowed"
+                    />
                   </div>
                 </div>
                 <div className="mt-8 pt-6 border-t border-white/5 flex justify-end gap-3">
-                  <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5 border border-transparent">Cancel</Button>
-                  <Button className="bg-white text-black hover:bg-white/90 font-medium">Save Changes</Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setFullName(me?.full_name ?? "")}
+                    disabled={fullName === me?.full_name}
+                    className="text-white/70 hover:text-white hover:bg-white/5 border border-transparent disabled:opacity-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={
+                      fullName === me?.full_name ||
+                      !fullName.trim() ||
+                      isSavingProfile
+                    }
+                    className="bg-white text-black hover:bg-white/90 font-medium disabled:opacity-50"
+                  >
+                    {isSavingProfile ? "Saving..." : "Save Changes"}
+                  </Button>
                 </div>
               </Card>
               <Card className="border-red-500/10 bg-red-500/[0.02] p-6 sm:p-8">
-                <h3 className="text-lg font-medium text-red-400">Danger Zone</h3>
-                <p className="text-sm text-white/40 mt-1">Permanently delete your account and all generated architectures.</p>
+                <h3 className="text-lg font-medium text-red-400">
+                  Danger Zone
+                </h3>
+                <p className="text-sm text-white/40 mt-1">
+                  Permanently delete your account and all generated
+                  architectures.
+                </p>
                 <div className="mt-6 flex">
-                  <Button variant="outline" className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/20" onClick={async () => {
-                    if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-                      try {
-                        await api("/users/me/settings", { method: "DELETE" });
-                        window.location.href = "/login";
-                      } catch (err) {
-                        alert("Failed to delete account.");
+                  <Button
+                    variant="outline"
+                    className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/20"
+                    onClick={async () => {
+                      if (
+                        confirm(
+                          "Are you sure you want to delete your account? This action cannot be undone.",
+                        )
+                      ) {
+                        try {
+                          await api("/users/me/settings", { method: "DELETE" });
+                          window.location.href = "/login";
+                        } catch (err) {
+                          alert("Failed to delete account.");
+                        }
                       }
-                    }
-                  }}>Delete Account</Button>
+                    }}
+                  >
+                    Delete Account
+                  </Button>
                 </div>
               </Card>
             </div>
@@ -254,8 +428,12 @@ export default function SettingsPage() {
                 <div className="absolute top-0 right-0 p-40 bg-violet-500/5 blur-[120px] rounded-full pointer-events-none" />
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-medium text-white/90">{activeWorkspace?.name ?? "Workspace"}</h3>
-                    <p className="text-sm text-white/40 mt-1">Manage your team members, roles, and access levels.</p>
+                    <h3 className="text-lg font-medium text-white/90">
+                      {activeWorkspace?.name ?? "Workspace"}
+                    </h3>
+                    <p className="text-sm text-white/40 mt-1">
+                      Manage your team members, roles, and access levels.
+                    </p>
                   </div>
                   {(activeRole === "admin" || activeRole === "editor") && (
                     <button
@@ -270,16 +448,23 @@ export default function SettingsPage() {
 
                 {/* Stats row */}
                 <div className="mt-6 grid grid-cols-3 gap-3">
-                  {(["admin", "editor", "viewer"] as WorkspaceRole[]).map((r) => {
-                    const count = members.filter((m) => m.role === r).length;
-                    const meta = ROLE_META[r];
-                    return (
-                      <div key={r} className={`rounded-xl border p-4 ${meta.color} bg-opacity-5`}>
-                        <p className="text-2xl font-bold">{count}</p>
-                        <p className="text-xs font-semibold uppercase tracking-wider mt-1 opacity-70">{meta.label}s</p>
-                      </div>
-                    );
-                  })}
+                  {(["admin", "editor", "viewer"] as WorkspaceRole[]).map(
+                    (r) => {
+                      const count = members.filter((m) => m.role === r).length;
+                      const meta = ROLE_META[r];
+                      return (
+                        <div
+                          key={r}
+                          className={`rounded-xl border p-4 ${meta.color} bg-opacity-5`}
+                        >
+                          <p className="text-2xl font-bold">{count}</p>
+                          <p className="text-xs font-semibold uppercase tracking-wider mt-1 opacity-70">
+                            {meta.label}s
+                          </p>
+                        </div>
+                      );
+                    },
+                  )}
                 </div>
               </Card>
 
@@ -287,8 +472,13 @@ export default function SettingsPage() {
                 {members.length === 0 ? (
                   <div className="py-16 text-center">
                     <Users className="h-8 w-8 text-white/20 mx-auto mb-3" />
-                    <p className="text-sm text-white/40">No members yet. Invite your first team member.</p>
-                    <button onClick={() => setShowInvite(true)} className="mt-4 text-sm text-white/60 hover:text-white underline underline-offset-4 transition-colors">
+                    <p className="text-sm text-white/40">
+                      No members yet. Invite your first team member.
+                    </p>
+                    <button
+                      onClick={() => setShowInvite(true)}
+                      className="mt-4 text-sm text-white/60 hover:text-white underline underline-offset-4 transition-colors"
+                    >
                       Invite team member →
                     </button>
                   </div>
@@ -311,20 +501,33 @@ export default function SettingsPage() {
                             {member.full_name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-white/90 truncate">{member.full_name}</p>
-                            <p className="text-xs text-white/40 truncate">{member.email}</p>
+                            <p className="text-sm font-medium text-white/90 truncate">
+                              {member.full_name}
+                            </p>
+                            <p className="text-xs text-white/40 truncate">
+                              {member.email}
+                            </p>
                           </div>
                         </div>
                         <div>
                           {activeRole === "admin" ? (
                             <select
                               value={member.role}
-                              onChange={(e) => updateMemberRole(member.id, e.target.value as WorkspaceRole)}
+                              onChange={(e) =>
+                                updateMemberRole(
+                                  member.id,
+                                  e.target.value as WorkspaceRole,
+                                )
+                              }
                               className="rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/20 transition-colors"
                               style={{ fontSize: "10px" }}
                             >
-                              {(["admin", "editor", "viewer"] as WorkspaceRole[]).map((r) => (
-                                <option key={r} value={r}>{r}</option>
+                              {(
+                                ["admin", "editor", "viewer"] as WorkspaceRole[]
+                              ).map((r) => (
+                                <option key={r} value={r}>
+                                  {r}
+                                </option>
                               ))}
                             </select>
                           ) : (
@@ -355,34 +558,46 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute top-0 left-0 p-32 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
-                <h3 className="text-lg font-medium text-white/90">Appearance</h3>
-                <p className="text-sm text-white/40 mt-1">Customize how SystemForge looks on your device.</p>
+                <h3 className="text-lg font-medium text-white/90">
+                  Appearance
+                </h3>
+                <p className="text-sm text-white/40 mt-1">
+                  Customize how SystemForge looks on your device.
+                </p>
                 <div className="mt-8 grid grid-cols-2 gap-4">
                   <div
                     onClick={() => updateSetting("theme", "dark")}
                     className={`rounded-xl border p-4 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors ${
-                      settings?.theme === "dark" 
-                        ? "bg-white/[0.05] border-white/20 ring-1 ring-white/20" 
+                      settings?.theme === "dark"
+                        ? "bg-white/[0.05] border-white/20 ring-1 ring-white/20"
                         : "bg-white/[0.01] border-white/5 hover:border-white/10"
                     }`}
                   >
                     <div className="h-10 w-10 rounded-full bg-black border border-white/10 flex items-center justify-center">
-                      {settings?.theme === "dark" && <Check className="h-4 w-4 text-white" />}
+                      {settings?.theme === "dark" && (
+                        <Check className="h-4 w-4 text-white" />
+                      )}
                     </div>
-                    <span className="text-sm font-medium text-white">Dark Mode</span>
+                    <span className="text-sm font-medium text-white">
+                      Dark Mode
+                    </span>
                   </div>
                   <div
                     onClick={() => updateSetting("theme", "light")}
                     className={`rounded-xl border p-4 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors ${
-                      settings?.theme === "light" 
-                        ? "bg-white/[0.05] border-white/20 ring-1 ring-white/20" 
+                      settings?.theme === "light"
+                        ? "bg-white/[0.05] border-white/20 ring-1 ring-white/20"
                         : "bg-white/[0.01] border-white/5 hover:border-white/10"
                     }`}
                   >
                     <div className="h-10 w-10 rounded-full bg-white border border-black/10 flex items-center justify-center">
-                      {settings?.theme === "light" && <Check className="h-4 w-4 text-black" />}
+                      {settings?.theme === "light" && (
+                        <Check className="h-4 w-4 text-black" />
+                      )}
                     </div>
-                    <span className="text-sm font-medium text-white">Light Mode</span>
+                    <span className="text-sm font-medium text-white">
+                      Light Mode
+                    </span>
                   </div>
                 </div>
               </Card>
@@ -394,20 +609,71 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute bottom-0 right-0 p-32 bg-emerald-500/5 blur-[100px] rounded-full pointer-events-none" />
-                <h3 className="text-lg font-medium text-white/90">API Credentials</h3>
-                <p className="text-sm text-white/40 mt-1">Manage your API keys for programmable access to the architecture generation engine.</p>
-                <div className="mt-8 text-center py-12 rounded-xl border border-dashed border-white/10 bg-white/[0.01]">
-                  <Key className="h-8 w-8 text-white/20 mx-auto mb-3" />
-                  <p className="text-sm text-white/50">You don&apos;t have any active API keys.</p>
-                  <Button className="mt-4 bg-white/10 text-white hover:bg-white/20 border border-white/5" onClick={async () => {
-                    try {
-                      const res = await api<{api_key: string}>("/auth/api-keys", { method: "POST" });
-                      setNewApiKey(res.api_key);
-                    } catch (err) {
-                      alert("Failed to generate API key.");
-                    }
-                  }}>Generate Secret Key</Button>
-                </div>
+                <h3 className="text-lg font-medium text-white/90">
+                  API Credentials
+                </h3>
+                <p className="text-sm text-white/40 mt-1">
+                  Manage your API keys for programmable access to the
+                  architecture generation engine.
+                </p>
+                {apiStatus?.last4 ? (
+                  <div className="mt-8 flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                        <Key className="h-5 w-5 text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white/90">
+                          sf_...{apiStatus.last4}
+                        </p>
+                        <p className="text-xs text-white/40">
+                          Created{" "}
+                          {new Date(apiStatus.created_at!).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="border-red-500/20 text-red-400 hover:bg-red-500/10"
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            "Revoke this API key? Applications using it will immediately lose access.",
+                          )
+                        ) {
+                          await api("/auth/api-keys", { method: "DELETE" });
+                          mutateApiStatus();
+                        }
+                      }}
+                    >
+                      Revoke Key
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-8 text-center py-12 rounded-xl border border-dashed border-white/10 bg-white/[0.01]">
+                    <Key className="h-8 w-8 text-white/20 mx-auto mb-3" />
+                    <p className="text-sm text-white/50">
+                      You don&apos;t have any active API keys.
+                    </p>
+                    <Button
+                      className="mt-4 bg-white/10 text-white hover:bg-white/20 border border-white/5"
+                      onClick={async () => {
+                        try {
+                          const res = await api<{ api_key: string }>(
+                            "/auth/api-keys",
+                            { method: "POST" },
+                          );
+                          setNewApiKey(res.api_key);
+                          mutateApiStatus();
+                        } catch (err) {
+                          alert("Failed to generate API key.");
+                        }
+                      }}
+                    >
+                      Generate Secret Key
+                    </Button>
+                  </div>
+                )}
               </Card>
             </div>
           )}
@@ -415,40 +681,73 @@ export default function SettingsPage() {
           {activeTab === "security" && (
             <div className="space-y-6">
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8">
-                <h3 className="text-lg font-medium text-white/90">Abuse Analytics (7d)</h3>
-                <p className="text-sm text-white/40 mt-1">Operational visibility for abuse/risk events across API and realtime channels.</p>
+                <h3 className="text-lg font-medium text-white/90">
+                  Abuse Analytics (7d)
+                </h3>
+                <p className="text-sm text-white/40 mt-1">
+                  Operational visibility for abuse/risk events across API and
+                  realtime channels.
+                </p>
                 <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
                   {Object.entries(abuseSummary ?? {}).map(([k, v]) => (
-                    <div key={k} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                    <div
+                      key={k}
+                      className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                    >
                       <p className="text-xl font-semibold text-white/90">{v}</p>
-                      <p className="text-xs text-white/40 mt-1">{k.replaceAll("_", " ")}</p>
+                      <p className="text-xs text-white/40 mt-1">
+                        {k.replaceAll("_", " ")}
+                      </p>
                     </div>
                   ))}
                 </div>
               </Card>
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8">
-                <h3 className="text-lg font-medium text-white/90">API Contract Governance</h3>
+                <h3 className="text-lg font-medium text-white/90">
+                  API Contract Governance
+                </h3>
                 <div className="mt-4 space-y-2 text-sm text-white/60">
-                  <p>Current API version: <span className="text-white/90">{apiVersions?.current ?? "v1"}</span></p>
-                  <p>Compatibility: {apiVersions?.compatibility ?? "semver-compatible additive changes within major versions"}</p>
+                  <p>
+                    Current API version:{" "}
+                    <span className="text-white/90">
+                      {apiVersions?.current ?? "v1"}
+                    </span>
+                  </p>
+                  <p>
+                    Compatibility:{" "}
+                    {apiVersions?.compatibility ??
+                      "semver-compatible additive changes within major versions"}
+                  </p>
                   <p>Sunset: {apiVersions?.sunset_at ?? "Not scheduled"}</p>
                 </div>
               </Card>
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8">
-                <h3 className="text-lg font-medium text-white/90">Anomaly Detection</h3>
-                <p className="mt-2 text-sm text-white/60">Anomaly score: {anomalySummary?.anomaly_score ?? 0}</p>
+                <h3 className="text-lg font-medium text-white/90">
+                  Anomaly Detection
+                </h3>
+                <p className="mt-2 text-sm text-white/60">
+                  Anomaly score: {anomalySummary?.anomaly_score ?? 0}
+                </p>
                 <div className="mt-2 space-y-1">
                   {(anomalySummary?.anomalies ?? []).map((a) => (
-                    <p key={a} className="text-xs text-amber-300">{a}</p>
+                    <p key={a} className="text-xs text-amber-300">
+                      {a}
+                    </p>
                   ))}
                 </div>
               </Card>
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8">
-                <h3 className="text-lg font-medium text-white/90">Security Audit Trail</h3>
+                <h3 className="text-lg font-medium text-white/90">
+                  Security Audit Trail
+                </h3>
                 <div className="mt-3 space-y-2">
                   {(auditTrail?.items ?? []).map((row, idx) => (
-                    <p key={`${row.ts}-${idx}`} className="text-xs text-white/60">
-                      {new Date(row.ts).toLocaleString()} • {row.action} • user #{row.actor_user_id}
+                    <p
+                      key={`${row.ts}-${idx}`}
+                      className="text-xs text-white/60"
+                    >
+                      {new Date(row.ts).toLocaleString()} • {row.action} • user
+                      #{row.actor_user_id}
                     </p>
                   ))}
                 </div>
@@ -459,20 +758,32 @@ export default function SettingsPage() {
           {activeTab === "sessions" && (
             <div className="space-y-6">
               <Card className="border-white/5 bg-[#0a0a0a] p-6 sm:p-8">
-                <h3 className="text-lg font-medium text-white/90">Device Sessions</h3>
-                <p className="text-sm text-white/40 mt-1">View and revoke active refresh-token sessions.</p>
+                <h3 className="text-lg font-medium text-white/90">
+                  Device Sessions
+                </h3>
+                <p className="text-sm text-white/40 mt-1">
+                  View and revoke active refresh-token sessions.
+                </p>
                 <div className="mt-4 space-y-2">
                   {(sessions?.items ?? []).map((session) => (
-                    <div key={session.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                    <div
+                      key={session.id}
+                      className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3"
+                    >
                       <p className="text-xs text-white/60">
-                        #{session.id} • {new Date(session.created_at).toLocaleString()} • expires {new Date(session.expires_at).toLocaleDateString()}
+                        #{session.id} •{" "}
+                        {new Date(session.created_at).toLocaleString()} •
+                        expires{" "}
+                        {new Date(session.expires_at).toLocaleDateString()}
                       </p>
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={session.is_revoked}
                         onClick={async () => {
-                          await api(`/auth/sessions/${session.id}`, { method: "DELETE" });
+                          await api(`/auth/sessions/${session.id}`, {
+                            method: "DELETE",
+                          });
                           mutateSessions();
                         }}
                       >
@@ -489,4 +800,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
